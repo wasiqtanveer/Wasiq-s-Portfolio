@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import Navigation from './Navigation';
 import Marquee from './Marquee';
+import Waaazek from './Waaazek';
 import photoAsset from '../assets/unnamed - Edited.png';
 
 export default function Hero({ isReady }) {
@@ -169,6 +170,7 @@ export default function Hero({ isReady }) {
       <div className="hero-glow" />
 
       <Navigation />
+      <Waaazek />
 
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-12">
         <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-muted mb-5 opacity-0" id="portfolio-label">
