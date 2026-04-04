@@ -1,0 +1,9 @@
+/* App.css is intentionally left mostly empty, 
+   most styling will be in components or index.css */
+
+.app-container {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

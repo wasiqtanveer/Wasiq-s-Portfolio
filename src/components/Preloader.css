@@ -1,0 +1,113 @@
+.preloader-container.clean-os {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #16161a;
+    /* Soft dark grey */
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.preloader-fade-out {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-black);
+    z-index: 50;
+    pointer-events: none;
+}
+
+.os-ring {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 1px solid var(--neon-green);
+    box-shadow: 0 0 20px var(--neon-green-dim), inset 0 0 20px var(--neon-green-dim);
+    z-index: 2;
+}
+
+.os-glow {
+    position: absolute;
+    width: 40vw;
+    height: 40vw;
+    background: radial-gradient(circle, var(--neon-green-dim) 0%, transparent 60%);
+    border-radius: 50%;
+    z-index: 1;
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.os-line {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 3;
+}
+
+.os-line.horizontal {
+    width: 80vw;
+    height: 1px;
+    left: 10vw;
+    transform-origin: center;
+}
+
+.os-line.horizontal.top {
+    top: 20vh;
+}
+
+.os-line.horizontal.bottom {
+    bottom: 20vh;
+}
+
+.os-line.vertical {
+    width: 1px;
+    height: 60vh;
+    top: 20vh;
+    transform-origin: center;
+}
+
+.os-line.vertical.left {
+    left: 15vw;
+}
+
+.os-line.vertical.right {
+    right: 15vw;
+}
+
+.os-panel {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    z-index: 4;
+}
+
+.os-panel.top-left {
+    top: 10vh;
+    left: 10vw;
+    width: 180px;
+    height: 70px;
+    border-left: 2px solid var(--neon-green-dim);
+}
+
+.os-panel.bottom-right {
+    bottom: 10vh;
+    right: 10vw;
+    width: 220px;
+    height: 90px;
+    border-right: 2px solid var(--neon-green-dim);
+}
+
+.preloader-cursor.os-cursor {
+    position: relative;
+    z-index: 20;
+    filter: drop-shadow(0 0 15px var(--neon-green));
+}

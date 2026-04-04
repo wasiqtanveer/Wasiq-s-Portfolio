@@ -1,0 +1,108 @@
+.side-nav {
+    position: fixed;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+}
+
+.nav-line {
+    position: absolute;
+    right: 24px;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--neon-green-dim), transparent);
+    z-index: -1;
+}
+
+.nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    position: relative;
+}
+
+.nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 50px;
+}
+
+.nav-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    font-size: 20px;
+    border-radius: 50%;
+    background-color: var(--bg-black);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.nav-item:hover .nav-icon {
+    color: var(--neon-green);
+    border-color: var(--neon-green);
+    box-shadow: 0 0 15px var(--neon-green-dim);
+    transform: scale(1.1);
+}
+
+.nav-icon.active {
+    color: var(--neon-green);
+    border-color: var(--neon-green);
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+}
+
+.nav-label {
+    position: absolute;
+    right: 65px;
+    background: var(--bg-gray);
+    padding: 5px 15px;
+    border-radius: 4px;
+    border: 1px solid var(--neon-green-dim);
+    color: var(--neon-green);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.active-indicator {
+    position: absolute;
+    right: -5px;
+    /* Centers the 60x60 circle over the 50x50 icon */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 1px dashed var(--neon-green);
+    animation: rotate 10s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .side-nav {
+        display: none;
+    }
+}
