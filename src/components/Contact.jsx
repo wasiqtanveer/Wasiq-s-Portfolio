@@ -500,7 +500,7 @@ export default function Contact() {
               {[
                 { label: 'RESPONSE TIME',      value: 'Within 24 hours'  },
                 { label: 'TIMEZONE',           value: 'PKT — UTC+5'      },
-                { label: 'PREFERRED CONTACT',  value: 'Email / LinkedIn' },
+                { label: 'PREFERRED CONTACT',  value: 'mwasiqt@gmail.com' },
               ].map(row => (
                 <div key={row.label} className="contact-info-row flex items-center justify-between py-[18px] border-b border-border" style={{ opacity: 0 }}>
                   <span className="font-mono text-[10px] text-muted tracking-[0.15em] uppercase">{row.label}</span>

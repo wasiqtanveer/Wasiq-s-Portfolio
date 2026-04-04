@@ -21,12 +21,9 @@ export default function WorkArchive() {
   }, { scope: container });
 
   const projects = [
-    { year: 2025, title: 'E-Commerce Platform', type: 'Full Stack', tech: ['Next.js', 'PostgreSQL', 'Stripe'], link: '#' },
-    { year: 2024, title: 'Financial Dashboard', type: 'Frontend', tech: ['TypeScript', 'Recharts', 'WebSockets'], link: '#' },
-    { year: 2024, title: 'Authentication Microservice', type: 'Backend', tech: ['Node.js', 'Redis', 'Docker'], link: '#' },
-    { year: 2023, title: 'Real-time Chat App', type: 'Full Stack', tech: ['React', 'Socket.io', 'MongoDB'], link: '#' },
-    { year: 2023, title: 'Weather Inference Engine', type: 'Core', tech: ['Python', 'TensorFlow', 'FastAPI'], link: '#' },
-    { year: 2022, title: 'Portfolio v1', type: 'Design', tech: ['Vue.js', 'Tailwind', 'GSAP'], link: '#' },
+    { year: 2025, title: 'Ads Acceleration', type: 'Full Stack', tech: ['Next.js', 'Marketing Tech', 'Analytics'], link: 'https://adsacceleration.com' },
+    { year: 2024, title: 'Library Management System', type: 'Frontend', tech: ['React', 'Database', 'CRUD'], link: 'https://wasiqtanveer.github.io/Library-Management-System-V-1.0/' },
+    { year: 2024, title: 'CR Attendance App', type: 'Mobile UI', tech: ['React', 'Mobile UI', 'Production'], link: 'https://wasiqtanveer.github.io/CR-Attendance-App-V1.0-/' },
   ];
 
   return (

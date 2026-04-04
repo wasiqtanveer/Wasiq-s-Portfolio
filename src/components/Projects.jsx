@@ -10,24 +10,27 @@ gsap.registerPlugin(ScrollTrigger);
 const projectsData = [
   {
     id: '01',
-    title: 'E-Commerce Platform',
-    description: 'A highly scalable digital storefront built on Next.js edge functions and specialized PostgreSQL clustering algorithms.',
-    tags: ['React', 'Next.js', 'PostgreSQL', 'Stripe'],
-    initials: '01'
+    title: 'Ads Acceleration',
+    description: 'A premium marketing engine for high-performance ad management and analytics tracking.',
+    tags: ['Next.js', 'Marketing Tech', 'Analytics'],
+    initials: 'AA',
+    url: 'https://adsacceleration.com'
   },
   {
     id: '02',
-    title: 'Financial Dashboard',
-    description: 'Real-time analytical interface parsing multiple websockets simultaneously to chart market intelligence seamlessly.',
-    tags: ['TypeScript', 'Recharts', 'WebSockets', 'Python'],
-    initials: '02'
+    title: 'Library Management System',
+    description: 'A complete inventory and archival system built for school libraries to manage books and memberships.',
+    tags: ['React', 'Database', 'CRUD'],
+    initials: 'LM',
+    url: 'https://wasiqtanveer.github.io/Library-Management-System-V-1.0/'
   },
   {
     id: '03',
-    title: 'Authentication Microservice',
-    description: 'OAuth 2.0 specialized authentication gateway utilizing Redis rate-limiting and complex distributed JWT handshakes.',
-    tags: ['Node.js', 'Redis', 'Docker', 'AWS'],
-    initials: '03'
+    title: 'CR Attendance App',
+    description: 'Mobile-first attendance tracking system for class representatives to manage students efficiently.',
+    tags: ['React', 'Mobile UI', 'Production'],
+    initials: 'CR',
+    url: 'https://wasiqtanveer.github.io/CR-Attendance-App-V1.0-/'
   }
 ];
 
@@ -197,20 +200,14 @@ export default function Projects() {
                 
                 <div className="stagger-link flex gap-4 mt-auto">
                   <a 
-                    href="#" 
+                    href={project.url} 
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="font-mono text-[11px] text-[#4a4a42] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
                     onMouseEnter={() => handleHoverGlobal(true)}
                     onMouseLeave={() => handleHoverGlobal(false)}
                   >
                     Live Site ↗
-                  </a>
-                  <a 
-                    href="#" 
-                    className="font-mono text-[11px] text-[#4a4a42] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
-                    onMouseEnter={() => handleHoverGlobal(true)}
-                    onMouseLeave={() => handleHoverGlobal(false)}
-                  >
-                    GitHub →
                   </a>
                 </div>
               </div>
