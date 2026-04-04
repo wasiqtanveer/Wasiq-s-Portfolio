@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -61,12 +61,18 @@ function FooterMarquee() {
 export default function Footer() {
   const container = useRef();
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
 
   const handleNavClick = (e, target) => {
+    e.preventDefault();
     if (isHome) {
-      e.preventDefault();
       lenisTo(target);
+    } else {
+      navigate('/');
+      setTimeout(() => {
+        lenisTo(target);
+      }, 100);
     }
   };
 
@@ -104,8 +110,8 @@ export default function Footer() {
 
       {/* Top Row */}
       <div className="px-6 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-border">
-        <a
-          href="/"
+        <Link
+          to="/"
           className="footer-logo font-hero font-black text-[24px] text-text no-underline hover:text-green transition-colors duration-200 opacity-0"
           onClick={(e) => handleNavClick(e, 0)}
           onMouseEnter={() => handleHover(true)}
@@ -113,20 +119,20 @@ export default function Footer() {
           aria-label="Wasiq Tanveer — scroll to top"
         >
           WT.
-        </a>
+        </Link>
 
         <nav className="hidden md:flex items-center gap-8" aria-label="Footer navigation">
           {NAV_LINKS.map(link => (
-            <a
+            <Link
               key={link.label}
-              href={`/${link.href}`}
+              to="/"
               className="footer-nav-link font-mono text-[11px] uppercase tracking-[0.15em] text-muted no-underline hover:text-text transition-colors duration-200 opacity-0"
               onClick={(e) => handleNavClick(e, link.href)}
               onMouseEnter={() => handleHover(true)}
               onMouseLeave={() => handleHover(false)}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 

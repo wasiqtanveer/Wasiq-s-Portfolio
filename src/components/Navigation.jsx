@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 
 const handleHover = (hovered) =>
   window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
@@ -21,12 +21,18 @@ const NAV_LINKS = [
 
 export default function Navigation() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
 
   const handleNavClick = (e, target) => {
+    e.preventDefault();
     if (isHome) {
-      e.preventDefault();
       lenisTo(target);
+    } else {
+      navigate('/');
+      setTimeout(() => {
+        lenisTo(target);
+      }, 100); // Wait for Home page to mount before scrolling
     }
   };
 
@@ -36,8 +42,8 @@ export default function Navigation() {
       id="main-nav"
       aria-label="Main navigation"
     >
-      <a
-        href="/"
+      <Link
+        to="/"
         className="font-hero font-black text-[1.1rem] text-text tracking-[-0.02em] no-underline hover:text-green transition-colors"
         onClick={(e) => handleNavClick(e, 0)}
         onMouseEnter={() => handleHover(true)}
@@ -45,20 +51,20 @@ export default function Navigation() {
         aria-label="Wasiq Tanveer — back to top"
       >
         WT.
-      </a>
+      </Link>
 
       <ul className="hidden md:flex gap-9 list-none" role="list">
         {NAV_LINKS.map(link => (
           <li key={link.label}>
-            <a
-              href={`/${link.href}`}
+            <Link
+              to="/"
               className="font-mono text-[11px] tracking-[0.18em] uppercase text-muted no-underline hover:text-text transition-colors"
               onClick={(e) => handleNavClick(e, link.href)}
               onMouseEnter={() => handleHover(true)}
               onMouseLeave={() => handleHover(false)}
             >
               {link.label}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>

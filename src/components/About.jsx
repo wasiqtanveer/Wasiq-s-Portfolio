@@ -106,10 +106,15 @@ export default function About() {
             Download CV ↓
           </a>
           <a
-            href="#work"
+            href="#projects"
             className="font-hero font-black text-[12px] uppercase tracking-wider px-9 py-4 bg-transparent text-muted border border-border no-underline text-center transition-all duration-200 hover:border-green hover:text-green w-full md:w-auto"
             onMouseEnter={() => handleHover(true)}
             onMouseLeave={() => handleHover(false)}
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.__lenis) window.__lenis.scrollTo('#projects', { duration: 1.2 });
+              else document.querySelector('#projects')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             View My Work →
           </a>
