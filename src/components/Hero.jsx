@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import Navigation from './Navigation';
 import Marquee from './Marquee';
+import photoAsset from '../assets/unnamed - Edited.png';
 
 export default function Hero({ isReady }) {
   const container = useRef(null);
@@ -198,7 +199,7 @@ export default function Hero({ isReady }) {
         <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181814] to-[#0f0f0d]">
           <img
             ref={imgRef}
-            src="/src/assets/unnamed%20-%20Edited.png"
+            src={photoAsset}
             alt="Wasiq Tanveer — Full Stack Developer"
             loading="eager"
             fetchpriority="high"

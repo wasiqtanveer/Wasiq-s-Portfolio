@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import gsap from 'gsap';
+import photoAsset from '../assets/unnamed - Edited.png';
 
 export default function Preloader({ onComplete }) {
   const container = useRef(null);
@@ -17,7 +18,7 @@ export default function Preloader({ onComplete }) {
         const img = new Image();
         img.onload = res;
         img.onerror = res; // resolve even on error so preloader isn't stuck
-        img.src = '/photo.jpg';
+        img.src = photoAsset;
       })
     ]);
 
