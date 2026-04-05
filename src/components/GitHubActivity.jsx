@@ -166,7 +166,7 @@ export default function GitHubActivity() {
   // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <section ref={container} className="relative w-full border-t border-border bg-bg overflow-hidden" id="activity">
+    <section ref={container} className="relative w-full border-t border-border bg-transparent overflow-hidden" id="activity">
 
       {/* Static Header — NEVER re-renders on filter change */}
       <div className="px-6 md:px-16 pt-[80px] md:pt-[140px] pb-10 md:pb-14">

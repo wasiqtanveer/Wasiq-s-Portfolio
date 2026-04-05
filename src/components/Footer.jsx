@@ -106,7 +106,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer ref={container} className="relative w-full border-t border-border" style={{ background: '#080806' }}>
+    <footer ref={container} className="relative w-full border-t border-border bg-transparent">
 
       {/* Top Row */}
       <div className="px-6 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-border">
@@ -118,7 +118,7 @@ export default function Footer() {
           onMouseLeave={() => handleHover(false)}
           aria-label="Wasiq Tanveer — scroll to top"
         >
-          WT.
+          WT<span className="text-green">.</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8" aria-label="Footer navigation">

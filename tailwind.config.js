@@ -7,12 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#0a0a08',
+        bg: '#141210',
         green: '#39FF14',
         text: '#E8E4DC',
         muted: '#4a4a42',
-        surface: '#111110',
-        border: '#1e1e18',
+        surface: 'rgba(255,255,255,0.025)',
+        border: 'rgba(255,255,255,0.05)',
       },
       fontFamily: {
         hero: ['Unbounded', 'sans-serif'],

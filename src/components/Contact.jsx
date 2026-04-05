@@ -138,7 +138,7 @@ function CustomSelect({ value, onChange }) {
             onClick={() => { onChange(s); setOpen(false); }}
             onMouseEnter={() => handleHover(true)}
             onMouseLeave={() => handleHover(false)}
-            className="w-full text-left px-4 py-3 font-body text-[14px] text-muted hover:bg-[#161614] hover:text-text transition-colors duration-150 cursor-none"
+            className="w-full text-left px-4 py-3 font-body text-[14px] text-muted hover:bg-[rgba(255,255,255,0.04)] hover:text-text transition-colors duration-150 cursor-none"
           >
             {s}
           </button>
@@ -184,7 +184,7 @@ function SocialRow({ social }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${social.name} profile`}
-      className="contact-social-row relative flex items-center justify-between py-4 px-4 border-b border-border no-underline hover:bg-[#0d0d0b] transition-colors duration-200 cursor-none"
+      className="contact-social-row relative flex items-center justify-between py-4 px-4 border-b border-border no-underline hover:bg-[rgba(255,255,255,0.04)] transition-colors duration-200 cursor-none"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       style={{ opacity: 0 }}
@@ -348,7 +348,7 @@ export default function Contact() {
   return (
     <section
       ref={container}
-      className="relative w-full border-t border-border bg-bg overflow-hidden"
+      className="relative w-full border-t border-border bg-transparent overflow-hidden"
       id="contact"
     >
       <div className="px-6 md:px-16 py-[80px] md:py-[140px]">

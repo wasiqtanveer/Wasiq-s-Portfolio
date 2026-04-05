@@ -27,7 +27,7 @@ export default function WorkArchive() {
   ];
 
   return (
-    <div ref={container} className="min-h-screen bg-bg pt-8 pb-32 px-6 md:px-16" id="work-page">
+    <div ref={container} className="min-h-screen bg-transparent pt-8 pb-32 px-6 md:px-16" id="work-page">
       <div className="flex justify-between items-center mb-[100px] md:mb-[160px] archive-title mt-4">
         <Link 
           to="/" 

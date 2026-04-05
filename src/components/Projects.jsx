@@ -133,7 +133,7 @@ export default function Projects() {
   };
 
   return (
-    <section ref={container} className="relative w-full border-t border-border bg-bg overflow-hidden" id="projects">
+    <section ref={container} className="relative w-full border-t border-border bg-transparent overflow-hidden" id="projects">
       
       {/* Header Area */}
       <div className="px-6 md:px-16 pt-[80px] md:pt-[140px] pb-12 md:pb-16">
@@ -168,7 +168,7 @@ export default function Projects() {
           return (
             <div 
               key={project.id}
-              className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[#131311] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
+              className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(255,255,255,0.04)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
               onMouseEnter={handleMouseEnterCard}
               onMouseLeave={handleMouseLeaveCard}
             >
@@ -213,7 +213,7 @@ export default function Projects() {
               </div>
 
               {/* Image Side (Hidden on Mobile) */}
-              <div className={`hidden md:flex w-full md:w-1/2 aspect-[16/9] bg-[#0d0d0b] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[#131311] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
+              <div className={`hidden md:flex w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
                 <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
                   {project.initials}
                 </div>

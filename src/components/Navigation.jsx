@@ -50,7 +50,7 @@ export default function Navigation() {
         onMouseLeave={() => handleHover(false)}
         aria-label="Wasiq Tanveer — back to top"
       >
-        WT.
+        WT<span className="text-green">.</span>
       </Link>
 
       <ul className="hidden md:flex gap-9 list-none" role="list">

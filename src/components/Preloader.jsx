@@ -83,7 +83,7 @@ export default function Preloader({ onComplete }) {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[240px] preloader-inner">
         {/* WT. Initials - anchored above the bar */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-8 font-hero font-black text-[72px] text-text leading-none select-none whitespace-nowrap">
-          WT.
+          WT<span className="text-green">.</span>
         </div>
 
         {/* The 2px Bar — split at 50vh cuts this in half */}

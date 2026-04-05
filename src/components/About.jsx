@@ -75,7 +75,7 @@ export default function About() {
   }, { scope: container });
 
   return (
-    <section ref={container} className="relative overflow-visible w-full min-h-screen px-6 md:px-16 py-16 md:py-20 border-t border-border flex flex-col md:flex-row items-center justify-center gap-10 md:gap-16 bg-bg" id="about">
+    <section ref={container} className="relative overflow-visible w-full min-h-screen px-6 md:px-16 py-16 md:py-20 border-t border-border flex flex-col md:flex-row items-center justify-center gap-10 md:gap-16 bg-transparent" id="about">
       <div className="about-line absolute left-0 top-0 w-[2px] h-full bg-green origin-top scale-y-0" />
       
       {/* Left Column */}

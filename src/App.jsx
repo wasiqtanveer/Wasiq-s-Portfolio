@@ -4,6 +4,7 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import CustomCursor from './components/CustomCursor';
+import Background from './components/Background';
 import Hero from './components/Hero';
 import About from './components/About';
 import ScrollProgress from './components/ScrollProgress';
@@ -93,6 +94,7 @@ function App() {
 
   return (
     <HashRouter>
+      <Background />
       <ScrollToTop />
       <ErrorBoundary>
         <ScrollProgress />

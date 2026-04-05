@@ -3,7 +3,6 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import Navigation from './Navigation';
 import Marquee from './Marquee';
-import Waaazek from './Waaazek';
 import photoAsset from '../assets/unnamed - Edited.png';
 
 export default function Hero({ isReady }) {
@@ -167,10 +166,8 @@ export default function Hero({ isReady }) {
 
   return (
     <section className="relative w-full min-h-screen flex flex-col overflow-hidden isolate" id="hero" ref={container}>
-      <div className="hero-glow" />
 
       <Navigation />
-      <Waaazek />
 
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 md:px-12">
         <div className="font-mono text-[11px] tracking-[0.18em] uppercase text-muted mb-5 opacity-0" id="portfolio-label">
@@ -178,7 +175,7 @@ export default function Hero({ isReady }) {
         </div>
 
         <h1 className="font-hero font-black text-[clamp(52px,14vw,13vw)] md:text-[clamp(64px,12vw,13vw)] leading-[0.92] tracking-[-0.03em] text-text m-0 select-none overflow-visible min-h-[120px] md:min-h-[160px] pt-4 will-change-[transform] [transform:translateZ(0)]">
-          <span className="block overflow-visible"><span className="inline-block name-part-1 opacity-0">Wasiq</span></span>
+          <span className="block overflow-visible"><span className="inline-block name-part-1 opacity-0">Was<span style={{ backgroundImage: 'linear-gradient(to bottom, #39FF14 0%, #39FF14 28%, #E8E4DC 28%, #E8E4DC 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', paddingTop: '0.05em', marginTop: '-0.05em', paddingBottom: '0.05em' }}>i</span>q</span></span>
           <span className="block overflow-visible"><span className="inline-block name-part-2 opacity-0">Tanveer</span></span>
         </h1>
 
