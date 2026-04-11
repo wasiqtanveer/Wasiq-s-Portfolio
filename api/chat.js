@@ -59,8 +59,6 @@ PERSONALITY RULES:
 - You are Waaazek — never say you are Gemini or any AI model`
 
 export default async function handler(req, res) {
-    console.log('API KEY EXISTS:', !!process.env.GEMINI_API_KEY)
-  console.log('API KEY FIRST 6 CHARS:', process.env.GEMINI_API_KEY?.slice(0, 6))
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -72,36 +70,78 @@ export default async function handler(req, res) {
 
   if (!userMessage) return res.status(400).json({ error: 'No message provided' })
 
-  try {
+  // Define Groq fetcher
+  const fetchGroq = async () => {
+    if (!process.env.GROK_API_KEY) throw new Error("Missing GROK_API_KEY (Groq)")
+    const formattedHistory = (messages || []).map(m => ({
+      role: m.role === 'model' ? 'assistant' : 'user',
+      content: m.parts?.[0]?.text || ''
+    }))
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...formattedHistory,
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.7,
+        max_tokens: 300,
+      })
+    })
+    const data = await response.json()
+    if (data.error) throw new Error(data.error.message || "Groq API Error")
+    const reply = data?.choices?.[0]?.message?.content
+    if (!reply) throw new Error('No reply from Groq')
+    return reply;
+  }
+
+  // Define Gemini fetcher (1.5-flash fallback)
+  const fetchGemini = async () => {
+    if (!process.env.GEMINI_API_KEY) throw new Error("Missing GEMINI_API_KEY")
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: SYSTEM_PROMPT }]
-          },
-          contents: [
-            ...(messages || []),
-            { role: 'user', parts: [{ text: userMessage }] }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 300,
-          }
+          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [...(messages || []), { role: 'user', parts: [{ text: userMessage }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 300 }
         })
       }
     )
-
     const data = await response.json()
+    if (data.error) throw new Error(data.error.message || "Gemini API Error")
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text
-
     if (!reply) throw new Error('No reply from Gemini')
+    return reply;
+  }
+
+  try {
+    let reply;
+    
+    // Attempt 1: Try Gemini first
+    try {
+      reply = await fetchGemini();
+      console.log("SUCCESS: Used Gemini API");
+    } catch (geminiErr) {
+      console.error(`GEMINI FAILED (${geminiErr.message}), falling back to Groq...`);
+      
+      // Attempt 2: Fallback to Groq if Gemini fails or is missing
+      reply = await fetchGroq();
+      console.log("SUCCESS: Used Groq API fallback");
+    }
 
     res.status(200).json({ reply })
 
   } catch (err) {
+    console.error("ALL APIS FAILED:", err.message);
     res.status(500).json({
       reply: "Oops something went wrong! Reach Wasiq directly at mwasqit@gmail.com"
     })
