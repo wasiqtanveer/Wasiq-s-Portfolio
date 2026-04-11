@@ -17,6 +17,7 @@ const Waaazek = () => {
   const chatRef = useRef(null);
   const wrapperRef = useRef(null);
   const idleRef = useRef(null);
+  const inputRef = useRef(null);
   const idleMsgIndex = useRef(0);
 
   const IDLE_MESSAGES = [
@@ -195,6 +196,13 @@ const Waaazek = () => {
     e.stopPropagation();
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    if (!isLoading && isOpen && inputRef.current) {
+      // Small timeout to allow input to re-enable before focusing
+      setTimeout(() => inputRef.current.focus(), 50);
+    }
+  }, [isLoading, isOpen]);
 
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -419,6 +427,7 @@ const Waaazek = () => {
 
         <div className="waaazek-input-area">
           <input 
+            ref={inputRef}
             type="text" 
             className="waaazek-input" 
             placeholder={isLoading ? "Waaazek is thinking..." : "Ask about Wasiq..."}

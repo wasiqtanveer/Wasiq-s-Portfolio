@@ -19,13 +19,13 @@ Core Concepts: DSA, OOP, REST APIs, Database Design
 Soft Skills: Self-Management, Client Communication, Leadership, Problem Solving, Public Speaking
 
 EXPERIENCE:
-1. Ads Acceleration — Automation Engineer (Remote) — Jan 2025 to Present
+1. Ads Acceleration — Automation Engineer (Remote) — March 2 to Present
    - Built entire adsacceleration.com platform solo using React, Node.js, Python, MySQL
    - Built Amazon seller tools: SQP Analyzer, Keyword Cannibalization Analyzer, PPC Impact Visualizer, AI Listing Comparator
    - Built and published Chrome Extensions with persistent storage, auto-opening dashboards, multi-tab workflows
    - Integrated Anthropic, OpenAI, DeepSeek APIs for SEO analysis, keyword classification, PPC recommendations
 
-2. Brandora — Frontend Web Developer Intern — June 2024 to Dec 2024
+2. Brandora — Frontend Web Developer Intern — June 2025 to Jan 2025
    - Built responsive web apps with React, JavaScript, Node.js
    - Built Class Attendance Web App saving 70% of class rep time
    - Built Phonebook Web App
