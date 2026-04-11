@@ -1,42 +1,25 @@
 import React, { useRef, useEffect } from 'react';
 
 export default function Background() {
-  const grainCanvasRef = useRef(null);
   const scratchCanvasRef = useRef(null);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(pointer: coarse)').matches;
-    
-    const grainCanvas = grainCanvasRef.current;
-    if (!grainCanvas) return;
-    const gctx = grainCanvas.getContext('2d', { alpha: false });
-    
     const scratchCanvas = scratchCanvasRef.current;
-    const sctx = scratchCanvas ? scratchCanvas.getContext('2d', { alpha: true }) : null;
+    if (!scratchCanvas) return;
+    const sctx = scratchCanvas.getContext('2d', { alpha: true });
 
     let w, h;
     const resize = () => {
       w = window.innerWidth;
       h = window.innerHeight;
       
-      // Scale down drawing buffer to 1/2 size for massive performance boost,
-      // CSS scales it back to 100%, creating perfectly organic chunky grain.
-      grainCanvas.width = Math.floor(w / 1.5);
-      grainCanvas.height = Math.floor(h / 1.5);
-      
-      if (scratchCanvas) {
-        scratchCanvas.width = w;
-        scratchCanvas.height = h;
-        drawScratches();
-      }
-      
-      if (isMobile) {
-        drawGrain();
-      }
+      scratchCanvas.width = w;
+      scratchCanvas.height = h;
+      drawScratches();
     };
 
     const drawScratches = () => {
-      if (!sctx) return;
       sctx.clearRect(0, 0, w, h);
       const count = Math.floor(Math.random() * 3) + 4; // 4 to 6 lines
       sctx.strokeStyle = 'rgba(255,255,255,0.012)';
@@ -60,38 +43,6 @@ export default function Background() {
         sctx.stroke();
       }
     };
-
-    const drawGrain = () => {
-      const cw = grainCanvas.width;
-      const ch = grainCanvas.height;
-      if (!cw || !ch) return;
-      const imgData = gctx.createImageData(cw, ch);
-      const data = imgData.data;
-      
-      for (let i = 0; i < data.length; i += 4) {
-        // Base gray layer, adding noise -28 to +28
-        const val = 120 + ((Math.random() * 56) - 28);
-        data[i]     = val; // R
-        data[i + 1] = val; // G
-        data[i + 2] = val; // B
-        data[i + 3] = 255; // Opaque for buffer put speed
-      }
-      gctx.putImageData(imgData, 0, 0);
-    };
-
-    let frameId;
-    let lastTime = 0;
-    const fps = 24;
-    const interval = 1000 / fps;
-
-    const loop = (time) => {
-      frameId = requestAnimationFrame(loop);
-      const delta = time - lastTime;
-      if (delta > interval) {
-        lastTime = time - (delta % interval);
-        drawGrain();
-      }
-    };
     
     let scratchInterval;
     
@@ -99,28 +50,19 @@ export default function Background() {
     resize();
     
     if (!isMobile) {
-      frameId = requestAnimationFrame(loop);
       scratchInterval = setInterval(drawScratches, 8000);
     }
     
     return () => {
       window.removeEventListener('resize', resize);
-      if (frameId) cancelAnimationFrame(frameId);
       if (scratchInterval) clearInterval(scratchInterval);
     };
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none" style={{ zIndex: -2 }}>
-      {/* Animated Grain */}
-      <canvas 
-        ref={grainCanvasRef} 
-        className="absolute inset-0 w-full h-full mix-blend-overlay"
-        style={{ 
-          willChange: 'contents',
-          opacity: 0.038 // Matches prompt rgba requirement computationally efficiently
-        }}
-      />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -2 }}>
+      {/* Animated CSS Grain for vast performance boost */}
+      <div className="absolute inset-0 w-full h-full mix-blend-overlay css-grain" />
       
       {/* Scratch Lines */}
       <canvas 

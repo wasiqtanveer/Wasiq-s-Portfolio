@@ -77,6 +77,16 @@ const Waaazek = () => {
   const isOpenRef = useRef(isOpen);
   useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
 
+  const isPastHeroRef = useRef(false);
+  useEffect(() => {
+    const onScroll = () => {
+      isPastHeroRef.current = window.scrollY > window.innerHeight * 0.8;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       if (idleRef.current) clearInterval(idleRef.current);
@@ -84,7 +94,7 @@ const Waaazek = () => {
     }
 
     const triggerPeek = () => {
-      if (isOpenRef.current) return;
+      if (isOpenRef.current || isPastHeroRef.current) return;
       
       setIdleMessage(IDLE_MESSAGES[idleMsgIndex.current]);
       idleMsgIndex.current = (idleMsgIndex.current + 1) % IDLE_MESSAGES.length;
@@ -134,8 +144,7 @@ const Waaazek = () => {
     
     if (idleRef.current) clearInterval(idleRef.current);
     idleRef.current = setInterval(() => {
-      // Inline copy of triggerPeek for mouse leave
-      if (isOpenRef.current) return;
+      if (isOpenRef.current || isPastHeroRef.current) return;
       setIdleMessage(IDLE_MESSAGES[idleMsgIndex.current]);
       idleMsgIndex.current = (idleMsgIndex.current + 1) % IDLE_MESSAGES.length;
       gsap.to(wrapperRef.current, { right: 16, duration: 0.5, ease: 'elastic.out(1, 0.6)' });

@@ -54,16 +54,23 @@ export default function CustomCursor() {
       yPercent: -50,
     });
 
-    let mouseX = window.innerWidth  / 2;
-    let mouseY = window.innerHeight / 2;
-    let ringX  = mouseX;
-    let ringY  = mouseY;
+    let ringX  = window.innerWidth  / 2;
+    let ringY  = window.innerHeight / 2;
+    let mouseX = ringX;
+    let mouseY = ringY;
+
+    // Use fast setters
+    const setDotX = gsap.quickSetter(dot, "x", "px");
+    const setDotY = gsap.quickSetter(dot, "y", "px");
+    const setRingX = gsap.quickSetter(ring, "x", "px");
+    const setRingY = gsap.quickSetter(ring, "y", "px");
 
     // ── Mouse move — dot is instant ──────────────────────────────────────
     const onMove = (e) => {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      gsap.set(dot, { x: mouseX, y: mouseY });
+      setDotX(mouseX);
+      setDotY(mouseY);
     };
     window.addEventListener('mousemove', onMove, { passive: true });
 
@@ -71,7 +78,8 @@ export default function CustomCursor() {
     const tick = gsap.ticker.add(() => {
       ringX += (mouseX - ringX) * 0.13;
       ringY += (mouseY - ringY) * 0.13;
-      gsap.set(ring, { x: ringX, y: ringY });
+      setRingX(ringX);
+      setRingY(ringY);
     });
 
     // ── Hover expand/contract — GSAP owns scale, no CSS conflict ─────────
