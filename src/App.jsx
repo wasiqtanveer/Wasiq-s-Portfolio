@@ -10,6 +10,7 @@ import About from './components/About';
 import ScrollProgress from './components/ScrollProgress';
 import Preloader from './components/Preloader';
 import ErrorBoundary from './components/ErrorBoundary';
+import Waaazek from './components/Waaazek';
 
 // Lazy load heavy sections
 const Projects      = lazy(() => import('./components/Projects'));
@@ -110,6 +111,7 @@ function App() {
             </div>
           } />
         </Routes>
+        <Waaazek />
       </ErrorBoundary>
     </HashRouter>
   );

@@ -300,8 +300,15 @@ export default function Contact() {
       return;
     }
     setErrors({});
-    setBtnState('loading');
 
+    if (!import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.VITE_EMAILJS_SERVICE_ID.includes('your_')) {
+      console.warn('EmailJS IDs are unpopulated in .env. Please fill them in to enable the contact form.');
+      setBtnState('error');
+      setTimeout(() => setBtnState('idle'), 3000);
+      return;
+    }
+
+    setBtnState('loading');
     try {
       await emailjs.sendForm(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
