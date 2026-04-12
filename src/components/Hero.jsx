@@ -53,7 +53,9 @@ export default function Hero({ isReady }) {
       .fromTo('#portfolio-label', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5 }, 0.3)
       .fromTo('.name-part-1', { opacity: 0, y: 100 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power4.out' }, 0.5)
       .fromTo('.name-part-2', { opacity: 0, y: 100 }, { opacity: 1, y: 0, duration: 0.9, ease: 'power4.out' }, 0.7)
-      .fromTo(photoCard.current, { y: -80, opacity: 0, rotation: 0 }, { y: 0, opacity: 1, rotation: -4, duration: 1, ease: 'elastic.out(1, 0.6)' }, 1.3)
+      // Smooth reveal for the role text container — split seconds after name starts appearing
+      .fromTo('#hero-role', { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 1.2)
+      .fromTo(photoCard.current, { y: -80, opacity: 0, rotation: 0 }, { y: 0, opacity: 1, rotation: -4, duration: 1, ease: 'elastic.out(1, 0.6)' }, 1.4)
       // Photo cinematic reveal — overlaps card settle by 0.4s
       .to(imgRef.current, {
         opacity: 1,
@@ -63,8 +65,8 @@ export default function Hero({ isReady }) {
         duration: 1.2,
         ease: 'power2.out'
       }, '-=0.4')
-      .fromTo('#circular-text-wrap', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 1.5)
-      .fromTo('#marquee-wrapper', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5 }, 1.6);
+      .fromTo('#circular-text-wrap', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 1.7)
+      .fromTo('#marquee-wrapper', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5 }, 1.8);
 
     // Parallax
     const maxShift = 12;
@@ -117,6 +119,8 @@ export default function Hero({ isReady }) {
 
   // Typewriter
   useEffect(() => {
+    if (!isReady) return; // Only start typewriter after preloader is done
+
     const roles = [
       'Full Stack Developer',
       'Problem Solver',
@@ -130,9 +134,6 @@ export default function Hero({ isReady }) {
     
     const typeEl = document.getElementById('typewriter-text');
     if (!typeEl) return;
-
-    // Start with role wrapper faded in but empty
-    gsap.set('#hero-role', { opacity: 1 });
 
     const typeWriter = () => {
       const current = roles[roleIdx];
@@ -155,14 +156,14 @@ export default function Hero({ isReady }) {
       timeout = setTimeout(typeWriter, deleting ? 38 : 68);
     };
 
-    // Trigger typewriter precisely when the names are finishing in the timeline (1.1s)
-    gsap.delayedCall(1.1, typeWriter);
+    // Trigger typewriter precisely when the container finishes fading in (around 1.5s into master timeline)
+    gsap.delayedCall(1.5, typeWriter);
 
     return () => {
       clearTimeout(timeout);
       gsap.killTweensOf(typeWriter);
     };
-  }, []);
+  }, [isReady]);
 
   return (
     <section className="relative w-full min-h-screen flex flex-col overflow-hidden isolate" id="hero" ref={container}>
