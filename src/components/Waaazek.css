@@ -26,7 +26,7 @@
 .waaazek-wrapper {
   position: fixed;
   right: -52px;
-  bottom: 320px;
+  bottom: 420px;
   z-index: 1000;
   cursor: pointer;
   display: flex;
@@ -105,8 +105,8 @@
 
 .waaazek-chat-container {
   position: fixed;
-  bottom: 100px;
-  right: 20px;
+  bottom: 80px;
+  right: 60px;
   z-index: 999;
   width: 340px;
   height: 500px;
@@ -122,7 +122,7 @@
   .waaazek-chat-container {
     width: calc(100vw - 32px);
     right: 16px;
-    bottom: 90px;
+    bottom: 80px;
     height: 70vh;
   }
 }
@@ -204,15 +204,16 @@
 
 .waaazek-close-btn {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 16px;
+  font-size: 22px;
   color: #4a4a42;
   transition: color 0.2s;
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0 0 0 12px;
+  padding: 4px 12px;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .waaazek-close-btn:hover {

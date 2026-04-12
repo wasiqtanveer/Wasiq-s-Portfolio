@@ -25,7 +25,7 @@ EXPERIENCE:
    - Built and published Chrome Extensions with persistent storage, auto-opening dashboards, multi-tab workflows
    - Integrated Anthropic, OpenAI, DeepSeek APIs for SEO analysis, keyword classification, PPC recommendations
 
-2. Brandora — Frontend Web Developer Intern — June 2025 to Jan 2025
+2. Brandora — Frontend Web Developer Intern — June 2025 to Jan 2026
    - Built responsive web apps with React, JavaScript, Node.js
    - Built Class Attendance Web App saving 70% of class rep time
    - Built Phonebook Web App

@@ -42,16 +42,18 @@ export default function Navigation() {
       id="main-nav"
       aria-label="Main navigation"
     >
-      <Link
-        to="/"
-        className="font-hero font-black text-[1.1rem] text-text tracking-[-0.02em] no-underline hover:text-green transition-colors"
-        onClick={(e) => handleNavClick(e, 0)}
-        onMouseEnter={() => handleHover(true)}
-        onMouseLeave={() => handleHover(false)}
-        aria-label="Wasiq Tanveer — back to top"
-      >
-        WT<span className="text-green">.</span>
-      </Link>
+      <div className="w-24">
+        <Link
+          to="/"
+          className="font-hero font-black text-[1.1rem] text-text tracking-[-0.02em] no-underline hover:text-green transition-colors"
+          onClick={(e) => handleNavClick(e, 0)}
+          onMouseEnter={() => handleHover(true)}
+          onMouseLeave={() => handleHover(false)}
+          aria-label="Wasiq Tanveer — back to top"
+        >
+          WT<span className="text-green">.</span>
+        </Link>
+      </div>
 
       <ul className="hidden md:flex gap-9 list-none" role="list">
         {NAV_LINKS.map(link => (
@@ -68,14 +70,9 @@ export default function Navigation() {
           </li>
         ))}
       </ul>
-
-      <div className="flex items-center gap-2 font-mono text-[11px] tracking-[0.18em] uppercase text-muted">
-        <div
-          className="w-[8px] h-[8px] rounded-full bg-green shadow-[0_0_6px_#39FF14,0_0_12px_rgba(57,255,20,0.5)] animate-[pulse-dot_2s_ease-in-out_infinite]"
-          aria-hidden="true"
-        />
-        <span>Available</span>
-      </div>
+      
+      {/* Balances the flex layout since 'Available' was removed */}
+      <div className="w-24 hidden md:block"></div>
     </nav>
   );
 }

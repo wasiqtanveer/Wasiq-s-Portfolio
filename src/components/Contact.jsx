@@ -219,11 +219,17 @@ export default function Contact() {
   const formRef   = useRef();
   const rightCard = useRef();
 
-  const [fields, setFields]     = useState({ name: '', email: '', message: '' });
-  const [subject, setSubject]   = useState('');
-  const [errors, setErrors]     = useState({});
+  const nameRef = useRef();
+  const emailRef = useRef();
+  const messageRef = useRef();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
   const [charCount, setCharCount] = useState(0);
-  const [btnState, setBtnState] = useState('idle'); // idle | loading | success | error
+  const [errors, setErrors] = useState({});
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error
 
   useScrollReveal(container);
 
@@ -274,60 +280,48 @@ export default function Contact() {
 
   // ── Field helpers ────────────────────────────────────────────────────────
 
-  const shakeField = useCallback((selector) => {
-    gsap.to(selector, { x: 6, duration: 0.05, repeat: 5, yoyo: true, ease: 'none',
-      onComplete: () => gsap.set(selector, { x: 0 }) });
+  const shakeField = useCallback((ref) => {
+    if (ref) gsap.to(ref, { x: 6, duration: 0.05, repeat: 5, yoyo: true, ease: 'none',
+      onComplete: () => gsap.set(ref, { x: 0 }) });
   }, []);
 
   const validate = useCallback(() => {
     const errs = {};
-    if (!fields.name.trim())         errs.name    = 'Name is required';
-    if (!isValidEmail(fields.email)) errs.email   = '[ invalid email format ]';
-    if (!fields.message.trim())      errs.message = 'Message is required';
+    if (!name.trim()) errs.name = true;
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = true;
+    if (!message.trim()) errs.message = true;
     return errs;
-  }, [fields]);
+  }, [name, email, message]);
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
+    setErrors(errs);
     if (Object.keys(errs).length) {
-      setErrors(errs);
-      if (errs.name)    shakeField('.field-name');
-      if (errs.email)   shakeField('.field-email');
-      if (errs.message) shakeField('.field-message');
-      return;
-    }
-    setErrors({});
-
-    if (!import.meta.env.VITE_EMAILJS_SERVICE_ID || import.meta.env.VITE_EMAILJS_SERVICE_ID.includes('your_')) {
-      console.warn('EmailJS IDs are unpopulated in .env. Please fill them in to enable the contact form.');
-      setBtnState('error');
-      setTimeout(() => setBtnState('idle'), 3000);
+      if (errs.name) shakeField(nameRef.current);
+      if (errs.email) shakeField(emailRef.current);
+      if (errs.message) shakeField(messageRef.current);
       return;
     }
 
-    setBtnState('loading');
+    setStatus('loading');
     try {
       await emailjs.sendForm(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         formRef.current,
-        { publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY }
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
-      setBtnState('success');
+      setStatus('success');
       // Celebration pulse
       gsap.fromTo('.submit-btn', { scale: 1 }, { scale: 1.05, duration: 0.15, yoyo: true, repeat: 1, ease: 'power2.out' });
-      setTimeout(() => {
-        setBtnState('idle');
-        setFields({ name: '', email: '', message: '' });
-        setSubject('');
-        setCharCount(0);
-      }, 3000);
+      setName(''); setEmail(''); setSubject(''); setMessage(''); setCharCount(0);
+      setTimeout(() => setStatus('idle'), 3000);
     } catch {
-      setBtnState('error');
-      setTimeout(() => setBtnState('idle'), 3000);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
@@ -391,21 +385,22 @@ export default function Contact() {
                 <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR NAME ]</label>
                 <div className="relative group">
                   <input
+                    ref={nameRef}
                     name="from_name"
                     type="text"
                     placeholder="Wasiq Tanveer"
-                    value={fields.name}
-                    onChange={e => setFields(f => ({ ...f, name: e.target.value }))}
+                    value={name}
+                    onChange={e => setName(e.target.value)}
                     onKeyDown={playTypingSound}
-                    onFocus={() => setErrors(er => ({ ...er, name: '' }))}
+                    onFocus={() => setErrors(er => ({ ...er, name: false }))}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
                     className={`${inputBase} ${errors.name ? 'border-b-[#ff3939]' : 'focus:border-b-green'}`}
+                    style={{ borderColor: errors.name ? '#ff3939' : undefined }}
                   />
                   {/* Focus green underline fill */}
                   <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
                 </div>
-                {errors.name && <span className="font-mono text-[10px] text-[#ff3939]">[ {errors.name} ]</span>}
               </div>
 
               {/* Email */}
@@ -413,24 +408,22 @@ export default function Contact() {
                 <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR EMAIL ]</label>
                 <div className="relative group">
                   <input
+                    ref={emailRef}
                     name="from_email"
                     type="email"
                     placeholder="hello@example.com"
-                    value={fields.email}
-                    onChange={e => setFields(f => ({ ...f, email: e.target.value }))}
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setErrors(p => ({...p, email: false})) }}
                     onKeyDown={playTypingSound}
-                    onBlur={() => {
-                      if (fields.email && !isValidEmail(fields.email))
-                        setErrors(er => ({ ...er, email: 'invalid email format' }));
-                    }}
-                    onFocus={() => setErrors(er => ({ ...er, email: '' }))}
+                    onFocus={() => setErrors(er => ({ ...er, email: false }))}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
                     className={`${inputBase} ${errors.email ? 'border-b-[#ff3939]' : 'focus:border-b-green'}`}
+                    style={{ borderColor: errors.email ? '#ff3939' : undefined }}
                   />
                   <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
                 </div>
-                {errors.email && <span className="font-mono text-[10px] text-[#ff3939]">[ {errors.email} ]</span>}
+                {errors.email && <span style={{fontSize:'10px', color:'#ff3939', fontFamily:'JetBrains Mono', marginTop:'4px', display:'block'}}>[ invalid email format ]</span>}
               </div>
 
               {/* Subject */}
@@ -446,42 +439,45 @@ export default function Contact() {
                 <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR MESSAGE ]</label>
                 <div className="relative group">
                   <textarea
+                    ref={messageRef}
                     name="message"
                     placeholder="Tell me about your project..."
-                    value={fields.message}
+                    value={message}
                     rows={6}
                     maxLength={500}
-                    onChange={e => { setFields(f => ({ ...f, message: e.target.value })); setCharCount(e.target.value.length); }}
+                    onChange={e => { setMessage(e.target.value); setCharCount(e.target.value.length); }}
                     onKeyDown={playTypingSound}
-                    onFocus={() => setErrors(er => ({ ...er, message: '' }))}
+                    onFocus={() => setErrors(er => ({ ...er, message: false }))}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
                     className={`w-full bg-transparent border font-body text-[15px] text-text p-4 outline-none placeholder:text-[#2a2a22] resize-vertical min-h-[140px] transition-all duration-200
                       ${errors.message ? 'border-[#ff3939]' : 'border-border focus:border-[rgba(57,255,20,0.3)] focus:bg-[rgba(57,255,20,0.02)]'}`}
+                    style={{ borderColor: errors.message ? '#ff3939' : undefined }}
                   />
                   <span className="absolute bottom-3 right-3 font-mono text-[10px] text-[#2a2a22] pointer-events-none">
                     {charCount} / 500
                   </span>
                 </div>
-                {errors.message && <span className="font-mono text-[10px] text-[#ff3939]">[ Message is required ]</span>}
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                disabled={btnState === 'loading'}
+                disabled={status === 'loading' || status === 'success'}
                 className="submit-btn w-full py-[18px] font-hero font-bold text-[13px] uppercase tracking-wider transition-all duration-200 cursor-none outline-none disabled:opacity-70"
-                style={{ background: btnBg[btnState], color: btnColor[btnState] }}
+                style={{
+                  background: status === 'error' ? '#ff3939' : '#39FF14',
+                  opacity: status === 'loading' ? 0.5 : 1,
+                  cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                  color: status === 'error' ? '#ffffff' : '#0a0a08'
+                }}
                 onMouseEnter={() => handleHover(true)}
                 onMouseLeave={() => handleHover(false)}
               >
-                {btnState === 'loading'
-                  ? <span className="inline-flex items-center gap-2">
-                      {btnLabel.loading}
-                      <span className="inline-block w-[2px] h-[1em] bg-current align-middle animate-[blink_0.75s_step-end_infinite]" />
-                    </span>
-                  : btnLabel[btnState]
-                }
+                {status === 'idle' && 'Send a Message →'}
+                {status === 'loading' && <span className="inline-flex items-center gap-2">[ SENDING... ]<span className="inline-block w-[2px] h-[1em] bg-current align-middle animate-[blink_0.75s_step-end_infinite]" /></span>}
+                {status === 'success' && '[ MESSAGE SENT ✓ ]'}
+                {status === 'error' && '[ FAILED — TRY AGAIN ]'}
               </button>
 
             </form>

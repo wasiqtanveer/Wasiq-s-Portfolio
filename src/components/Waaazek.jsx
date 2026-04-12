@@ -193,9 +193,20 @@ const Waaazek = () => {
   };
 
   const closeChat = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (isOpenRef.current && chatRef.current && !chatRef.current.contains(e.target) && wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!isLoading && isOpen && inputRef.current) {
@@ -206,6 +217,38 @@ const Waaazek = () => {
 
   const formatTime = (date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const playTypingSound = () => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'triangle';
+      // Randomize pitch slightly to simulate different keys
+      osc.frequency.setValueAtTime(350 + Math.random() * 50, ctx.currentTime);
+      
+      gain.gain.setValueAtTime(0.015, ctx.currentTime); // Very quiet
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.03);
+    } catch (e) {
+      // Ignore if autoplay blocked or unsupported
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    if (e.target.value.length > inputValue.length) {
+      playTypingSound();
+    }
   };
 
   const sendMessage = async (text) => {
@@ -351,6 +394,9 @@ const Waaazek = () => {
       <div 
         className="waaazek-chat-container" 
         ref={chatRef} 
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        data-lenis-prevent="true"
         style={{ 
           opacity: isOpen ? 1 : 0, 
           pointerEvents: isOpen ? 'all' : 'none', 
@@ -432,7 +478,7 @@ const Waaazek = () => {
             className="waaazek-input" 
             placeholder={isLoading ? "Waaazek is thinking..." : "Ask about Wasiq..."}
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
           />

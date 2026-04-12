@@ -210,7 +210,8 @@ export default function Hero({ isReady }) {
 
       <div
         id="circular-text-wrap"
-        className="absolute bottom-[68px] right-6 w-[100px] h-[100px] md:bottom-[100px] md:right-12 md:w-[130px] md:h-[130px] z-30 opacity-0 will-change-transform"
+        className="absolute bottom-[68px] right-6 w-[100px] h-[100px] md:bottom-[100px] md:right-12 md:w-[130px] md:h-[130px] z-30 opacity-0 will-change-transform cursor-pointer"
+        onClick={() => window.open('https://www.linkedin.com/in/wasiq-tanveer', '_blank', 'noopener,noreferrer')}
         onMouseEnter={() => { handleCircleEnter(); handleHover(true); }}
         onMouseLeave={() => { handleCircleLeave(); handleHover(false); }}
       >
