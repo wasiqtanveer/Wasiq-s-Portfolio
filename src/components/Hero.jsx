@@ -192,7 +192,7 @@ export default function Hero({ isReady }) {
         onMouseEnter={() => handleHover(true)}
         onMouseLeave={() => handleHover(false)}
       >
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg_viewBox=%270_0_256_256%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter_id=%27noise%27%3E%3CfeTurbulence_type=%27fractalNoise%27_baseFrequency=%270.9%27_numOctaves=%274%27_stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect_width=%27100%25%27_height=%27100%25%27_filter=%27url(%23noise)%27_opacity=%270.12%27/%3E%3C/svg%3E')] bg-[length:150px] opacity-55 z-[2] mix-blend-overlay pointer-events-none" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg_viewBox=%270_0_256_256%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter_id=%27noise%27%3E%3CfeTurbulence_type=%27fractalNoise%27_baseFrequency=%270.9%27_numOctaves=%274%27_stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect_width=%27100%25%27_height=%27100%25%27_filter=%27url(%23noise)%27_opacity=%270.12%27/%3E%3C/svg%3E')] bg-[length:150px] opacity-55 z-[2] pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[rgba(57,255,20,0.3)] to-transparent z-[3]" />
         
         <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181814] to-[#0f0f0d]">

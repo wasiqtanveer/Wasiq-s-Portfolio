@@ -107,7 +107,7 @@ export default function Preloader({ onComplete }) {
       {/* Top Half Slice */}
       <div
         ref={topHalf}
-        className="absolute inset-0 bg-bg will-change-transform z-20"
+        className="absolute inset-0 bg-black will-change-transform z-20"
         style={{ clipPath: 'inset(0 0 50% 0)' }}
       >
         {renderContent(true)}
@@ -116,14 +116,14 @@ export default function Preloader({ onComplete }) {
       {/* Bottom Half Slice */}
       <div
         ref={bottomHalf}
-        className="absolute inset-0 bg-bg will-change-transform z-20"
+        className="absolute inset-0 bg-black will-change-transform z-20"
         style={{ clipPath: 'inset(50% 0 0 0)' }}
       >
         {renderContent(false)}
       </div>
 
       {/* Grain overlay */}
-      <div className="absolute inset-0 w-full h-full opacity-40 z-30 mix-blend-overlay pointer-events-none bg-[url('data:image/svg+xml,%3Csvg_viewBox=%270_0_256_256%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter_id=%27noise%27%3E%3CfeTurbulence_type=%27fractalNoise%27_baseFrequency=%270.9%27_numOctaves=%274%27_stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect_width=%27100%25%27_height=%27100%25%27_filter=%27url(%23noise)%27_opacity=%270.12%27/%3E%3C/svg%3E')] bg-[length:150px]" />
+      <div className="absolute inset-0 w-full h-full opacity-40 z-30 pointer-events-none bg-[url('data:image/svg+xml,%3Csvg_viewBox=%270_0_256_256%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter_id=%27noise%27%3E%3CfeTurbulence_type=%27fractalNoise%27_baseFrequency=%270.9%27_numOctaves=%274%27_stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect_width=%27100%25%27_height=%27100%25%27_filter=%27url(%23noise)%27_opacity=%270.12%27/%3E%3C/svg%3E')] bg-[length:150px]" />
     </div>
   );
 }

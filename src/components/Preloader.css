@@ -4,7 +4,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #16161a;
+    background-color: #000000;
     /* Soft dark grey */
     z-index: 10000;
     display: flex;
@@ -41,7 +41,6 @@
     background: radial-gradient(circle, var(--neon-green-dim) 0%, transparent 60%);
     border-radius: 50%;
     z-index: 1;
-    mix-blend-mode: screen;
     pointer-events: none;
 }
 

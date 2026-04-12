@@ -62,7 +62,7 @@ export default function Background() {
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -2 }}>
       {/* Animated CSS Grain for vast performance boost */}
-      <div className="absolute inset-0 w-full h-full mix-blend-overlay css-grain" />
+      <div className="absolute inset-0 w-full h-full css-grain" />
       
       {/* Scratch Lines */}
       <canvas 

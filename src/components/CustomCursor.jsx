@@ -4,6 +4,22 @@ import gsap from 'gsap';
 
 const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
+// Cache AudioContext to prevent severe memory leaks
+let globalAudioCtx = null;
+const getAudioCtx = () => {
+  if (typeof window === 'undefined') return null;
+  if (!globalAudioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      globalAudioCtx = new AudioContext();
+    }
+  }
+  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+    globalAudioCtx.resume();
+  }
+  return globalAudioCtx;
+};
+
 export default function CustomCursor() {
   const dotRef  = useRef(null);
   const ringRef = useRef(null);
@@ -12,7 +28,8 @@ export default function CustomCursor() {
   useEffect(() => {
     const onClick = () => {
       try {
-        const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = getAudioCtx();
+        if (!ctx) return;
         const osc  = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'sine';
@@ -59,28 +76,20 @@ export default function CustomCursor() {
     let mouseX = ringX;
     let mouseY = ringY;
 
-    // Use fast setters
-    const setDotX = gsap.quickSetter(dot, "x", "px");
-    const setDotY = gsap.quickSetter(dot, "y", "px");
-    const setRingX = gsap.quickSetter(ring, "x", "px");
-    const setRingY = gsap.quickSetter(ring, "y", "px");
+    // Create hardware-accelerated quickTo instances
+    const xToDot = gsap.quickTo(dot, "x", { duration: 0.05, ease: "power3" });
+    const yToDot = gsap.quickTo(dot, "y", { duration: 0.05, ease: "power3" });
+    const xToRing = gsap.quickTo(ring, "x", { duration: 0.25, ease: "power3" });
+    const yToRing = gsap.quickTo(ring, "y", { duration: 0.25, ease: "power3" });
 
-    // ── Mouse move — dot is instant ──────────────────────────────────────
+    // ── Mouse move ──────────────────────────────────────────────────────
     const onMove = (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-      setDotX(mouseX);
-      setDotY(mouseY);
+      xToDot(e.clientX);
+      yToDot(e.clientY);
+      xToRing(e.clientX);
+      yToRing(e.clientY);
     };
     window.addEventListener('mousemove', onMove, { passive: true });
-
-    // ── Lerp ring on ticker ──────────────────────────────────────────────
-    const tick = gsap.ticker.add(() => {
-      ringX += (mouseX - ringX) * 0.13;
-      ringY += (mouseY - ringY) * 0.13;
-      setRingX(ringX);
-      setRingY(ringY);
-    });
 
     // ── Hover expand/contract — GSAP owns scale, no CSS conflict ─────────
     const onHover = (e) => {
@@ -105,7 +114,6 @@ export default function CustomCursor() {
     return () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('cursor-hover', onHover);
-      gsap.ticker.remove(tick);
     };
   }, []);
 
