@@ -3,6 +3,8 @@ import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import CustomCursor from './components/CustomCursor';
 import Background from './components/Background';
 import Hero from './components/Hero';
@@ -113,6 +115,8 @@ function App() {
         </Routes>
         <Waaazek />
       </ErrorBoundary>
+      <Analytics />
+      <SpeedInsights />
     </HashRouter>
   );
 }
