@@ -12,6 +12,7 @@ export default function Hero({ isReady }) {
   const circleRef = useRef(null);   // SVG spinner
   const circleTweenRef = useRef(null); // persistent rotation tween
   const hoverTargets = useRef([]);
+  const hasInitialized = useRef(false);
 
   const addToHover = (el) => {
     if (el && !hoverTargets.current.includes(el)) {
@@ -122,46 +123,107 @@ export default function Hero({ isReady }) {
     if (!isReady) return; // Only start typewriter after preloader is done
 
     const roles = [
+      'Undergrad Student',
       'Full Stack Developer',
-      'Problem Solver',
+      'Automation Engineer',
+      'Builds Tools That Work',
       'Open Source Contributor',
-      'UI/UX Enthusiast',
+      'Turning Ideas Into Products',
+      'Backend-First Thinker',
+      'Ships Real Products',
     ];
+    const glyphs = '!<>-_\\/[]{}—=+*^?#________';
     let roleIdx = 0;
-    let charIdx = 0;
-    let deleting = false;
-    let timeout;
     
     const typeEl = document.getElementById('typewriter-text');
     if (!typeEl) return;
 
-    const typeWriter = () => {
-      const current = roles[roleIdx];
-      if (!deleting) {
-        typeEl.textContent = current.slice(0, charIdx + 1);
-        charIdx++;
-        if (charIdx === current.length) {
-          deleting = true;
-          timeout = setTimeout(typeWriter, 2200);
-          return;
+    const scramble = (newText) => {
+      const isInitial = !hasInitialized.current;
+      const oldText = typeEl.textContent || "";
+      const maxLength = Math.max(oldText.length, newText.length);
+      
+      // Get existing spans to reuse them (prevents "disappearing" look)
+      const existingSpans = Array.from(typeEl.children);
+      const spans = [];
+
+      for (let i = 0; i < maxLength; i++) {
+        let span = existingSpans[i];
+        if (!span) {
+          span = document.createElement('span');
+          span.style.display = 'inline-block';
+          span.style.whiteSpace = 'pre';
+          span.style.willChange = 'transform, opacity';
+          span.style.opacity = '0';
+          typeEl.appendChild(span);
         }
-      } else {
-        typeEl.textContent = current.slice(0, charIdx - 1);
-        charIdx--;
-        if (charIdx === 0) {
-          deleting = false;
-          roleIdx = (roleIdx + 1) % roles.length;
-        }
+        spans.push(span);
       }
-      timeout = setTimeout(typeWriter, deleting ? 38 : 68);
+
+      spans.forEach((span, i) => {
+        const targetChar = newText[i] || "";
+        // Increased stagger range for a more visible, drawn-out effect
+        const delay = isInitial ? Math.random() * 0.9 : Math.random() * 0.7;
+        const duration = isInitial ? (0.6 + Math.random() * 0.6) : 0.5;
+
+        // Smoother, more persistent scramble
+        const interval = setInterval(() => {
+          if (newText[i] === " " || (!newText[i] && !oldText[i] && !isInitial)) {
+            span.textContent = " ";
+            clearInterval(interval);
+            return;
+          }
+          span.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+        }, 50);
+
+        if (isInitial) {
+          // Dramatic reveal matching the name's kinetic style
+          gsap.fromTo(span, 
+            { y: 40, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 1.2,
+              delay: delay,
+              ease: "power4.out",
+              onComplete: () => {
+                clearInterval(interval);
+                span.textContent = targetChar;
+              }
+            }
+          );
+        } else {
+          // Seamless in-place transition for subsequent words
+          gsap.to(span, {
+            opacity: 1,
+            duration: 0.6,
+            delay: delay,
+            onComplete: () => {
+              clearInterval(interval);
+              span.textContent = targetChar;
+              if (i >= newText.length) {
+                gsap.to(span, { opacity: 0, duration: 0.4 });
+              }
+            }
+          });
+        }
+      });
+
+      if (isInitial) hasInitialized.current = true;
+      gsap.delayedCall(4, nextWord);
     };
 
-    // Trigger typewriter precisely when the container finishes fading in (around 1.5s into master timeline)
-    gsap.delayedCall(1.5, typeWriter);
+    const nextWord = () => {
+      roleIdx = (roleIdx + 1) % roles.length;
+      scramble(roles[roleIdx]);
+    };
+
+    // Initial triggger synced with hero entrance
+    const startCall = gsap.delayedCall(1.3, () => scramble(roles[roleIdx]));
 
     return () => {
-      clearTimeout(timeout);
-      gsap.killTweensOf(typeWriter);
+      gsap.killTweensOf(nextWord);
+      startCall.kill();
     };
   }, [isReady]);
 
@@ -182,7 +244,6 @@ export default function Hero({ isReady }) {
 
         <p className="mt-8 font-body font-light text-[clamp(16px,1.4vw,20px)] text-muted opacity-0 flex items-center gap-2 min-h-[28px]" id="hero-role">
           <span className="text-text font-light" id="typewriter-text"></span>
-          <span className="inline-block w-[2px] h-[1.1em] bg-green ml-[2px] align-middle shadow-[0_0_6px_#39FF14] animate-[blink_0.75s_step-end_infinite]"></span>
         </p>
       </div>
 
