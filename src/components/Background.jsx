@@ -1,7 +1,22 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
+
+// Lazy-load the WebGL scene so three.js doesn't block initial paint.
+const Scene3D = lazy(() => import('./Scene3D'));
 
 export default function Background() {
   const scratchCanvasRef = useRef(null);
+  const [show3D, setShow3D] = useState(false);
+
+  // Defer the WebGL scene until the browser is idle so it never competes
+  // with the preloader / hero entrance animation.
+  useEffect(() => {
+    const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200));
+    const id = ric(() => setShow3D(true));
+    return () => {
+      if (window.cancelIdleCallback) window.cancelIdleCallback(id);
+      else clearTimeout(id);
+    };
+  }, []);
 
   useEffect(() => {
     const isMobile = window.matchMedia('(pointer: coarse)').matches;
@@ -60,6 +75,24 @@ export default function Background() {
   }, []);
 
   return (
+    <>
+      {/* WebGL 3D scene — sits furthest back (z-index -3) */}
+      {show3D && (
+        <Suspense fallback={null}>
+          <Scene3D />
+        </Suspense>
+      )}
+
+      {/* Readability veil — softly darkens the 3D so content always reads cleanly */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          zIndex: -2,
+          background:
+            'radial-gradient(ellipse 90% 70% at 50% 45%, rgba(20,18,16,0.78) 0%, rgba(20,18,16,0.55) 45%, rgba(20,18,16,0.25) 100%)',
+        }}
+      />
+
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -2 }}>
       {/* Animated CSS Grain for vast performance boost */}
       <div className="absolute inset-0 w-full h-full css-grain" />
@@ -79,5 +112,6 @@ export default function Background() {
         }}
       />
     </div>
+    </>
   );
 }

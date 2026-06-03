@@ -4,8 +4,13 @@ import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
 import useScrollReveal from '../hooks/useScrollReveal';
+import useTilt from '../hooks/useTilt';
 
 gsap.registerPlugin(ScrollTrigger);
+
+const handleHoverGlobal = (hovered) => {
+  window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
+};
 
 const projectsData = [
   {
@@ -46,14 +51,110 @@ const splitTextToChars = (text) => {
   ));
 };
 
+const handleMouseEnterCard = (e) => {
+  const card = e.currentTarget;
+  const title = card.querySelector('.project-title');
+  const tBorder = card.querySelector('.left-green-border');
+
+  gsap.to(tBorder, { scaleY: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+
+  const tl = gsap.timeline({ overwrite: 'auto' });
+  tl.to(title, { x: 3, color: '#39FF14', duration: 0.05 })
+    .to(title, { x: -2, duration: 0.05 })
+    .to(title, { x: 1, color: '#39FF14', duration: 0.04 })
+    .to(title, { x: 0, color: '#E8E4DC', duration: 0.05 });
+};
+
+const handleMouseLeaveCard = (e) => {
+  const card = e.currentTarget;
+  const title = card.querySelector('.project-title');
+  const tBorder = card.querySelector('.left-green-border');
+
+  gsap.to(tBorder, { scaleY: 0, duration: 0.4, ease: 'power2.inOut', overwrite: 'auto' });
+  gsap.set(title, { x: 0, color: '#E8E4DC' });
+};
+
+function ProjectCard({ project, isEven }) {
+  const tiltRef = useTilt({ max: 6, scale: 1.015 });
+
+  return (
+    <div className="[perspective:1400px]">
+      <div
+        ref={tiltRef}
+        className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(255,255,255,0.04)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
+        onMouseEnter={handleMouseEnterCard}
+        onMouseLeave={handleMouseLeaveCard}
+      >
+        {/* Target for GSAP scaleY border animation */}
+        <div className="left-green-border absolute left-0 top-0 bottom-0 w-[2px] bg-green origin-top scale-y-0" />
+
+        {/* Content Side — lifted slightly in 3D */}
+        <div
+          className={`flex flex-col justify-center w-full md:w-1/2 order-2 md:mb-0 ${isEven ? 'md:order-2' : 'md:order-1'}`}
+          style={{ transform: 'translateZ(30px)' }}
+        >
+          <div className="stagger-link font-mono text-[11px] text-green tracking-[0.2em] mb-5">
+            {project.id}
+          </div>
+
+          <h3 className="stagger-link project-title font-hero font-bold text-[22px] md:text-[28px] text-text mb-3">
+            {project.title}
+          </h3>
+
+          <p className="stagger-link font-body text-[13px] md:text-[14px] text-muted max-w-[380px] mb-7 leading-[1.8]">
+            {project.description}
+          </p>
+
+          <div className="stagger-link flex flex-wrap gap-2 mb-9">
+            {project.tags.map(tag => (
+              <span key={tag} className="bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-widest px-3 py-1 will-change-[transform,opacity]">
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          <div className="stagger-link flex gap-4 mt-auto">
+            <a
+              href={project.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[11px] text-[#4a4a42] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
+              onMouseEnter={() => handleHoverGlobal(true)}
+              onMouseLeave={() => handleHoverGlobal(false)}
+            >
+              Live Site ↗
+            </a>
+          </div>
+        </div>
+
+        {/* Image Side — pops further forward in 3D (hidden on mobile) */}
+        <div
+          className={`hidden md:flex relative overflow-hidden w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}
+          style={{ transform: 'translateZ(55px)' }}
+        >
+          {project.image ? (
+            <img
+              src={project.image}
+              alt={project.title}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : (
+            <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
+              {project.initials}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Projects() {
   const container = useRef();
-  
-  useScrollReveal(container);
 
-  const handleHoverGlobal = (hovered) => {
-    window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
-  };
+  useScrollReveal(container);
 
   useGSAP(() => {
     // 1. Headline Char Stagger
@@ -110,31 +211,6 @@ export default function Projects() {
     });
   }, { scope: container });
 
-  const handleMouseEnterCard = (e) => {
-    const card = e.currentTarget;
-    const title = card.querySelector('.project-title');
-    const tBorder = card.querySelector('.left-green-border');
-
-    // Left green border scaleY 0 -> 1
-    gsap.to(tBorder, { scaleY: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
-
-    // Glitch animation on Title (One sequence strictly defined, overwrites required if re-hovered)
-    const tl = gsap.timeline({ overwrite: 'auto' });
-    tl.to(title, { x: 3, color: '#39FF14', duration: 0.05 })
-      .to(title, { x: -2, duration: 0.05 })
-      .to(title, { x: 1, color: '#39FF14', duration: 0.04 })
-      .to(title, { x: 0, color: '#E8E4DC', duration: 0.05 });
-  };
-
-  const handleMouseLeaveCard = (e) => {
-    const card = e.currentTarget;
-    const title = card.querySelector('.project-title');
-    const tBorder = card.querySelector('.left-green-border');
-
-    gsap.to(tBorder, { scaleY: 0, duration: 0.4, ease: 'power2.inOut', overwrite: 'auto' });
-    gsap.set(title, { x: 0, color: '#E8E4DC' });
-  };
-
   return (
     <section ref={container} className="relative w-full border-t border-border bg-transparent overflow-hidden" id="projects">
       
@@ -165,76 +241,9 @@ export default function Projects() {
 
       {/* Projects Container */}
       <div className="px-6 md:px-16 pb-[80px] md:pb-[140px] flex flex-col gap-16 md:gap-24">
-        {projectsData.map((project, index) => {
-          const isEven = index % 2 !== 0;
-
-          return (
-            <div 
-              key={project.id}
-              className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(255,255,255,0.04)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
-              onMouseEnter={handleMouseEnterCard}
-              onMouseLeave={handleMouseLeaveCard}
-            >
-              {/* Target for GSAP scaleY border animation */}
-              <div className="left-green-border absolute left-0 top-0 bottom-0 w-[2px] bg-green origin-top scale-y-0" />
-
-              {/* Content Side */}
-              <div className={`flex flex-col justify-center w-full md:w-1/2 order-2 md:mb-0 ${isEven ? 'md:order-2' : 'md:order-1'}`}>
-                
-                <div className="stagger-link font-mono text-[11px] text-green tracking-[0.2em] mb-5">
-                  {project.id}
-                </div>
-                
-                <h3 className="stagger-link project-title font-hero font-bold text-[22px] md:text-[28px] text-text mb-3">
-                  {project.title}
-                </h3>
-                
-                <p className="stagger-link font-body text-[13px] md:text-[14px] text-muted max-w-[380px] mb-7 leading-[1.8]">
-                  {project.description}
-                </p>
-                
-                <div className="stagger-link flex flex-wrap gap-2 mb-9">
-                  {project.tags.map(tag => (
-                    <span key={tag} className="bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-widest px-3 py-1 will-change-[transform,opacity]">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                
-                <div className="stagger-link flex gap-4 mt-auto">
-                  <a 
-                    href={project.url} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-[11px] text-[#4a4a42] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
-                    onMouseEnter={() => handleHoverGlobal(true)}
-                    onMouseLeave={() => handleHoverGlobal(false)}
-                  >
-                    Live Site ↗
-                  </a>
-                </div>
-              </div>
-
-              {/* Image Side (Hidden on Mobile) */}
-              <div className={`hidden md:flex relative overflow-hidden w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
-                {project.image ? (
-                  <img
-                    src={project.image}
-                    alt={project.title}
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                ) : (
-                  <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
-                    {project.initials}
-                  </div>
-                )}
-              </div>
-
-            </div>
-          );
-        })}
+        {projectsData.map((project, index) => (
+          <ProjectCard key={project.id} project={project} isEven={index % 2 !== 0} />
+        ))}
       </div>
 
       {/* Bottom Bar */}

@@ -92,6 +92,9 @@ export default function About() {
             I'm a full-stack developer with a passion for writing clean, scalable code and building robust systems. I thrive in crafting experiences that not only look visually stunning but function seamlessly under the hood.
           </p>
           <p className="font-body text-[15px] leading-[1.9] text-[#6b6b62]">
+            Beyond web apps, I build <span className="text-green">Chrome extensions</span> and <span className="text-green">automation tools</span> &mdash; from auto-updating Google Sheets BSR data via the Keepa API to pushing live Slack channel updates, all running hands-free.
+          </p>
+          <p className="font-body text-[15px] leading-[1.9] text-[#6b6b62]">
             With a strong foundation in modern web technologies and open source contributions, I focus on delivering end-to-end solutions that drive real results. Always learning, building, and solving problems.
           </p>
         </div>
@@ -126,15 +129,29 @@ export default function About() {
         <div className="font-mono text-[11px] tracking-[0.2em] text-muted mb-5 uppercase">
           [ STACK ]
         </div>
-        
-        <div className="flex flex-wrap gap-2 mb-8">
-          {['React','Next.js','Node.js','TypeScript','Python','PostgreSQL','MongoDB','AWS','Docker','Git','REST APIs','GraphQL','Linux','Redis'].map(skill => (
-            <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 will-change-[transform,opacity]">
-              {skill}
+
+        <div className="flex flex-col gap-5 mb-8">
+          {[
+            { label: 'Core', items: ['React','Next.js','Node.js','TypeScript','Python','REST APIs','GraphQL'] },
+            { label: 'Data & Infra', items: ['PostgreSQL','Supabase','MongoDB','Redis','Cloudflare R2','AWS','Docker','Linux','Git'] },
+            { label: 'Motion & UI', items: ['GSAP','Framer Motion','Three.js','Tailwind'] },
+            { label: 'Extensions & Automation', items: ['Chrome Extensions','Keepa API','Google Sheets API','Slack API','Cron / Schedulers'] },
+          ].map(group => (
+            <div key={group.label}>
+              <div className="font-mono text-[9px] tracking-[0.2em] text-[#3a3a32] mb-2.5 uppercase">
+                {group.label}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {group.items.map(skill => (
+                  <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 will-change-[transform,opacity]">
+                    {skill}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
-        
+
         <div className="w-full h-[1px] bg-border" />
         
         <div className="flex justify-between items-center py-4 border-b border-border">
