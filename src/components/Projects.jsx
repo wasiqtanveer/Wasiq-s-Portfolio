@@ -11,26 +11,29 @@ const projectsData = [
   {
     id: '01',
     title: 'Ads Acceleration',
-    description: 'A premium marketing engine for high-performance ad management and analytics tracking.',
-    tags: ['Next.js', 'Marketing Tech', 'Analytics'],
+    description: 'An Amazon PPC ad agency website. I built custom tools embedded directly into the site to power their ad management and analytics workflows.',
+    tags: ['React', 'CSS', 'GSAP', 'Node'],
     initials: 'AA',
-    url: 'https://adsacceleration.com'
+    url: 'https://adsacceleration.com',
+    image: '/projects/ads%20acceleration.jpg'
   },
   {
     id: '02',
-    title: 'Library Management System',
-    description: 'A complete inventory and archival system built for school libraries to manage books and memberships.',
-    tags: ['React', 'Database', 'CRUD'],
-    initials: 'LM',
-    url: 'https://wasiqtanveer.github.io/Library-Management-System-V-1.0/'
+    title: 'CR Attendance App',
+    description: 'An attendance app that class representatives use to manage their class attendance. Built for personal utility, then scaled into a full production tool.',
+    tags: ['React', 'CSS', 'Framer Motion', 'Supabase'],
+    initials: 'CR',
+    url: 'https://crattendanceapp.vercel.app/login',
+    image: '/projects/CR%20attendance%20app.jpg'
   },
   {
     id: '03',
-    title: 'CR Attendance App',
-    description: 'Mobile-first attendance tracking system for class representatives to manage students efficiently.',
-    tags: ['React', 'Mobile UI', 'Production'],
-    initials: 'CR',
-    url: 'https://wasiqtanveer.github.io/CR-Attendance-App-V1.0-/'
+    title: 'Paper Vault',
+    description: 'A platform where students upload academic material so others can benefit from it. Built to solve an obvious, real need among students.',
+    tags: ['React', 'Framer Motion', 'Supabase', 'Cloudflare R2'],
+    initials: 'PV',
+    url: 'https://paper-vault-ivory.vercel.app/',
+    image: '/projects/Paper%20Vault.jpg'
   }
 ];
 
@@ -213,10 +216,20 @@ export default function Projects() {
               </div>
 
               {/* Image Side (Hidden on Mobile) */}
-              <div className={`hidden md:flex w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
-                <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
-                  {project.initials}
-                </div>
+              <div className={`hidden md:flex relative overflow-hidden w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}>
+                {project.image ? (
+                  <img
+                    src={project.image}
+                    alt={project.title}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                ) : (
+                  <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
+                    {project.initials}
+                  </div>
+                )}
               </div>
 
             </div>

@@ -86,10 +86,18 @@ function App() {
     });
 
     window.__lenis = lenis;
-    gsap.ticker.add((time) => lenis.raf(time * 1000));
+
+    // Keep ScrollTrigger in sync with Lenis' virtualized scroll position.
+    // Without this, scroll-driven animations (incl. the top progress bar) lag
+    // or never fire because ScrollTrigger reads the native scroll, not Lenis.
+    lenis.on('scroll', ScrollTrigger.update);
+
+    const rafCb = (time) => lenis.raf(time * 1000);
+    gsap.ticker.add(rafCb);
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      gsap.ticker.remove(rafCb);
       lenis.destroy();
       window.__lenis = null;
     };

@@ -97,7 +97,7 @@ export default function About() {
         </div>
         <div className="flex flex-col md:flex-row gap-4 gs-reveal">
           <a
-            href="/MUHAMMAD WASIQ TANVEER CV 2.docx"
+            href="/Wasiq_CV_v2.pdf"
             download
             className="font-hero font-black text-[12px] uppercase tracking-wider px-9 py-4 bg-green text-bg no-underline text-center transition-all duration-200 hover:bg-[#CCFF00] hover:shadow-[0_0_20px_rgba(57,255,20,0.35)] w-full md:w-auto"
             onMouseEnter={() => handleHover(true)}

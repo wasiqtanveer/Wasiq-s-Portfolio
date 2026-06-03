@@ -314,7 +314,7 @@ const Waaazek = () => {
 
   const downloadCV = () => {
     const link = document.createElement('a');
-    link.href = '/Wasiq_CV.pdf';
+    link.href = '/Wasiq_CV_v2.pdf';
     link.download = 'Wasiq_Tanveer_CV.pdf';
     link.click();
   };
