@@ -92,20 +92,21 @@ export default function CustomCursor() {
     window.addEventListener('mousemove', onMove, { passive: true });
 
     // ── Hover expand/contract — GSAP owns scale, no CSS conflict ─────────
+    // Tight, premium response: quick to grow, no lag on shrink.
     const onHover = (e) => {
       const hovered = e.detail.hovered;
       // Dot: grow to 1.5× on hover, shrink back on leave
       gsap.to(dot, {
         scale: hovered ? 1.5 : 1,
-        duration: 0.3,
-        ease: 'power2.out',
+        duration: 0.22,
+        ease: 'power3.out',
         overwrite: 'auto',
       });
-      // Ring: grow to 1.8× on hover,  back to 1 on leave
+      // Ring: grow to 1.8× on hover, back to 1 on leave
       gsap.to(ring, {
         scale: hovered ? 1.8 : 1,
-        duration: 0.35,
-        ease: 'power2.out',
+        duration: 0.25,
+        ease: 'power3.out',
         overwrite: 'auto',
       });
     };

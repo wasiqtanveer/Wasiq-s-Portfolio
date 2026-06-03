@@ -83,14 +83,21 @@ export default function Background() {
         </Suspense>
       )}
 
-      {/* Readability veil — softly darkens the 3D so content always reads cleanly */}
+      {/* Readability veil — darkens the 3D so content always reads cleanly.
+          Higher opacity + a flat base layer keeps the scene subdued and the
+          centre from blooming too bright behind the hero/section text. */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
           zIndex: -2,
           background:
-            'radial-gradient(ellipse 90% 70% at 50% 45%, rgba(20,18,16,0.78) 0%, rgba(20,18,16,0.55) 45%, rgba(20,18,16,0.25) 100%)',
+            'radial-gradient(ellipse 100% 80% at 50% 45%, rgba(20,18,16,0.90) 0%, rgba(20,18,16,0.80) 45%, rgba(20,18,16,0.66) 100%)',
         }}
+      />
+      {/* Flat base tint — guarantees a consistent floor of darkness everywhere */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ zIndex: -2, background: 'rgba(20,18,16,0.30)' }}
       />
 
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -2 }}>

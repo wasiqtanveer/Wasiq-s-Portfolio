@@ -80,12 +80,18 @@ const Waaazek = () => {
 
   const isPastHeroRef = useRef(false);
   useEffect(() => {
-    const onScroll = () => {
+    let rafId = 0;
+    const read = () => {
+      rafId = 0;
       isPastHeroRef.current = window.scrollY > window.innerHeight * 0.8;
     };
+    const onScroll = () => { if (!rafId) rafId = requestAnimationFrame(read); };
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    read();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   useEffect(() => {

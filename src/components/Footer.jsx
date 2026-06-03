@@ -106,7 +106,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer ref={container} className="relative w-full border-t border-border bg-transparent">
+    <footer ref={container} className="cv-section relative w-full border-t border-border bg-transparent">
 
       {/* Top Row */}
       <div className="px-6 md:px-16 py-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-border">

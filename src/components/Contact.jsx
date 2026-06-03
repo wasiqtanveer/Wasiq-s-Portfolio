@@ -349,7 +349,7 @@ export default function Contact() {
   return (
     <section
       ref={container}
-      className="relative w-full border-t border-border bg-transparent overflow-hidden"
+      className="cv-section relative w-full border-t border-border bg-transparent overflow-hidden"
       id="contact"
     >
       <div className="px-6 md:px-16 py-[80px] md:py-[140px]">

@@ -69,25 +69,33 @@ export default function Hero({ isReady }) {
       .fromTo('#circular-text-wrap', { opacity: 0 }, { opacity: 1, duration: 0.5 }, 1.7)
       .fromTo('#marquee-wrapper', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5 }, 1.8);
 
-    // Parallax
+    // Parallax — quickTo reuses a single tween instead of spawning one per move.
+    // The pointer is sampled into vars and flushed at most once per frame (rAF
+    // coalescing) so bursty mousemove events never pile extra work onto the main
+    // thread or fight the 3D scene for frames.
     const maxShift = 12;
+    const xTo = gsap.quickTo(photoCard.current, 'x', { duration: 0.8, ease: 'power2.out' });
+    const yTo = gsap.quickTo(photoCard.current, 'y', { duration: 0.8, ease: 'power2.out' });
+
+    let px = 0, py = 0, rafId = 0;
+    const flush = () => {
+      rafId = 0;
+      xTo(px);
+      yTo(py);
+    };
     const onMouseMove = (e) => {
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      const dx = (e.clientX - cx) / cx;
-      const dy = (e.clientY - cy) / cy;
-
-      gsap.to(photoCard.current, {
-        x: -dx * maxShift,
-        y: -dy * maxShift,
-        duration: 0.8,
-        ease: 'power2.out',
-        overwrite: 'auto',
-      });
+      px = -((e.clientX - cx) / cx) * maxShift;
+      py = -((e.clientY - cy) / cy) * maxShift;
+      if (!rafId) rafId = requestAnimationFrame(flush);
     };
 
-    window.addEventListener('mousemove', onMouseMove);
-    return () => window.removeEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [isReady]);
 
   // Persistent GSAP rotation for the Hire Me circle

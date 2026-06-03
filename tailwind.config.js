@@ -11,8 +11,8 @@ export default {
         green: '#39FF14',
         text: '#E8E4DC',
         muted: '#4a4a42',
-        surface: 'rgba(255,255,255,0.025)',
-        border: 'rgba(255,255,255,0.05)',
+        surface: 'rgba(26,24,21,0.72)',
+        border: 'rgba(255,255,255,0.09)',
       },
       fontFamily: {
         hero: ['Unbounded', 'sans-serif'],

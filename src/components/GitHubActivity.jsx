@@ -155,6 +155,34 @@ export default function GitHubActivity() {
     }
   }, [loading, contributions.length]);
 
+  // ── Tooltip (delegated to the grid — one set of listeners, not 3×364) ──
+  // Position updates are coalesced into a single rAF so dragging across the
+  // grid doesn't fire a React re-render on every mousemove event.
+  const tipRaf = useRef(0);
+  const tipPos = useRef({ x: 0, y: 0 });
+
+  const handleGridMouseOver = useCallback((e) => {
+    const cell = e.target.closest('.gh-cell');
+    if (!cell) return;
+    setTooltip({
+      date: cell.dataset.date,
+      count: Number(cell.dataset.count),
+      x: e.clientX,
+      y: e.clientY,
+    });
+  }, []);
+
+  const handleGridMouseMove = useCallback((e) => {
+    tipPos.current = { x: e.clientX, y: e.clientY };
+    if (tipRaf.current) return;
+    tipRaf.current = requestAnimationFrame(() => {
+      tipRaf.current = 0;
+      setTooltip(t => (t ? { ...t, ...tipPos.current } : t));
+    });
+  }, []);
+
+  useEffect(() => () => { if (tipRaf.current) cancelAnimationFrame(tipRaf.current); }, []);
+
   // ── Derived stats ──────────────────────────────────────────────────────
 
   const stats = useMemo(() => [
@@ -220,14 +248,19 @@ export default function GitHubActivity() {
                   <span className="text-muted">contributions</span>
                 </div>
               )}
-              <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(52, 10px)', gridTemplateRows: 'repeat(7, 10px)', width: 'max-content' }}>
+              <div
+                className="grid gap-[3px]"
+                style={{ gridTemplateColumns: 'repeat(52, 10px)', gridTemplateRows: 'repeat(7, 10px)', width: 'max-content' }}
+                onMouseOver={handleGridMouseOver}
+                onMouseMove={handleGridMouseMove}
+                onMouseLeave={() => setTooltip(null)}
+              >
                 {contributions.length > 0
                   ? contributions.map((day, i) => (
-                    <div key={i} className="gh-cell w-[10px] h-[10px] cursor-default transition-colors duration-300 will-change-[transform,opacity]"
+                    <div key={i} className="gh-cell w-[10px] h-[10px] cursor-default transition-colors duration-300"
+                      data-date={day.date}
+                      data-count={day.count}
                       style={{ background: getLevel(day.count) }}
-                      onMouseEnter={(e) => setTooltip({ date: day.date, count: day.count, x: e.clientX, y: e.clientY })}
-                      onMouseMove={(e) => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : t)}
-                      onMouseLeave={() => setTooltip(null)}
                     />
                   ))
                   : <GridSkeleton />

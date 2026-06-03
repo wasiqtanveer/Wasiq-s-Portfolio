@@ -143,7 +143,7 @@ export default function About() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.items.map(skill => (
-                  <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 will-change-[transform,opacity]">
+                  <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5">
                     {skill}
                   </div>
                 ))}

@@ -81,7 +81,7 @@ function ProjectCard({ project, isEven }) {
     <div className="[perspective:1400px]">
       <div
         ref={tiltRef}
-        className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(255,255,255,0.04)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
+        className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(34,32,28,0.82)] hover:border-[rgba(57,255,20,0.18)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
         onMouseEnter={handleMouseEnterCard}
         onMouseLeave={handleMouseLeaveCard}
       >
@@ -107,7 +107,7 @@ function ProjectCard({ project, isEven }) {
 
           <div className="stagger-link flex flex-wrap gap-2 mb-9">
             {project.tags.map(tag => (
-              <span key={tag} className="bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-widest px-3 py-1 will-change-[transform,opacity]">
+              <span key={tag} className="bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-widest px-3 py-1">
                 {tag}
               </span>
             ))}
@@ -137,7 +137,7 @@ function ProjectCard({ project, isEven }) {
               src={project.image}
               alt={project.title}
               loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (
