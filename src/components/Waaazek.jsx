@@ -1,9 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import './Waaazek.css';
+import { renderMarkdown } from './waaazekMarkdown';
+
+const STORAGE_KEY = 'waaazek_chat';
+
+// Rehydrate a prior conversation (same browsing session) so closing/reopening
+// or a refresh doesn't wipe the chat. Times are revived back into Date objects.
+const loadStoredMessages = () => {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(m => ({ ...m, time: new Date(m.time) }));
+  } catch {
+    return [];
+  }
+};
 
 const Waaazek = () => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(loadStoredMessages);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pillsVisible, setPillsVisible] = useState(true);
@@ -12,13 +29,17 @@ const Waaazek = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [cooldown, setCooldown] = useState(false);
   const [idleMessage, setIdleMessage] = useState('');
-  
+  const [copiedIdx, setCopiedIdx] = useState(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+
   const messagesEndRef = useRef(null);
+  const messagesBoxRef = useRef(null);
   const chatRef = useRef(null);
   const wrapperRef = useRef(null);
   const idleRef = useRef(null);
   const inputRef = useRef(null);
   const idleMsgIndex = useRef(0);
+  const atBottomRef = useRef(true); // is the user pinned to the bottom of the log?
 
   const IDLE_MESSAGES = [
     "PSST! NEED HELP? 👋",
@@ -165,11 +186,46 @@ const Waaazek = () => {
     }, 6000);
   };
 
+  // Smart auto-scroll: only follow new content if the user is already pinned to
+  // the bottom. If they've scrolled up to re-read, we leave them be and surface
+  // a "jump to latest" button instead of yanking them down.
   useEffect(() => {
-    if (messagesEndRef.current) {
+    if (atBottomRef.current && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, showWelcome, isLoading]);
+
+  // Track whether the user is at the bottom of the message log.
+  useEffect(() => {
+    const box = messagesBoxRef.current;
+    if (!box) return;
+    const onScroll = () => {
+      const dist = box.scrollHeight - box.scrollTop - box.clientHeight;
+      const atBottom = dist < 40;
+      atBottomRef.current = atBottom;
+      setShowScrollBtn(!atBottom);
+    };
+    box.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => box.removeEventListener('scroll', onScroll);
+  }, [isOpen]);
+
+  const scrollToBottom = () => {
+    atBottomRef.current = true;
+    setShowScrollBtn(false);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Persist the conversation for the session so close/reopen/refresh keeps it.
+  useEffect(() => {
+    try {
+      if (messages.length) {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      } else {
+        sessionStorage.removeItem(STORAGE_KEY);
+      }
+    } catch { /* storage full / disabled — non-fatal */ }
+  }, [messages]);
 
   useEffect(() => {
     if (isOpen) {
@@ -225,27 +281,28 @@ const Waaazek = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Single shared AudioContext — creating one per keystroke leaks contexts
+  // (browsers cap ~6, then it silently stops working). Lazily created/resumed.
+  const audioCtxRef = useRef(null);
   const playTypingSound = () => {
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtxRef.current) audioCtxRef.current = new AC();
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume();
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      
       osc.type = 'triangle';
-      // Randomize pitch slightly to simulate different keys
       osc.frequency.setValueAtTime(350 + Math.random() * 50, ctx.currentTime);
-      
       gain.gain.setValueAtTime(0.015, ctx.currentTime); // Very quiet
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
-      
       osc.connect(gain);
       gain.connect(ctx.destination);
-      
       osc.start();
       osc.stop(ctx.currentTime + 0.03);
-    } catch (e) {
+    } catch {
       // Ignore if autoplay blocked or unsupported
     }
   };
@@ -255,63 +312,75 @@ const Waaazek = () => {
     if (e.target.value.length > inputValue.length) {
       playTypingSound();
     }
+    // Auto-grow the textarea up to a cap, then let it scroll internally.
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 96) + 'px';
   };
 
   const sendMessage = async (text) => {
-    if (!text.trim() || isLoading || cooldown) return;
-    
-    setMessages(prev => [...prev, {
-      role: 'user', text, time: new Date()
-    }]);
-    
+    const trimmed = text.trim();
+    if (!trimmed || isLoading || cooldown) return;
+
+    const userMsg = { role: 'user', text: trimmed, time: new Date() };
+    // Build the history that goes to the model FROM the conversation up to and
+    // including this user turn, in order. (Previously the new turn was omitted
+    // and the trailing bot message left the sequence ending on 'model', which
+    // muddled multi-turn context.) The server appends userMessage itself, so we
+    // forward only the prior turns here — now correctly ordered.
+    const history = messages.map(m => ({
+      role: m.role === 'bot' ? 'model' : 'user',
+      parts: [{ text: m.text }],
+    }));
+
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
+    if (inputRef.current) inputRef.current.style.height = 'auto'; // reset grow
     setPillsVisible(false);
     setIsLoading(true);
     setCooldown(true);
 
-    const cvKeywords = ['cv', 'resume', 'download', 'portfolio pdf'];
-    const wantsCv = cvKeywords.some(k => text.toLowerCase().includes(k));
+    // Word-boundary CV intent — substring matching fired on "service",
+    // "discover", "recover", etc. Now only real "cv/resume/download" words.
+    const wantsCv = /\b(cv|resume|résumé|download)\b|portfolio pdf/i.test(trimmed);
+
+    const pushBot = (botText) =>
+      setMessages(prev => [...prev, { role: 'bot', text: botText, time: new Date() }]);
 
     try {
-      const history = messages.map(m => ({
-        role: m.role === 'bot' ? 'model' : 'user',
-        parts: [{ text: m.text }]
-      }));
-
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: history,
-          userMessage: text
-        })
+        body: JSON.stringify({ messages: history, userMessage: trimmed }),
       });
 
-      const data = await response.json();
+      let data = {};
+      try { data = await response.json(); } catch { /* non-JSON error body */ }
 
-      setMessages(prev => [...prev, {
-        role: 'bot',
-        text: data.reply || "Hmm I had trouble — reach Wasiq at mwasqit@gmail.com",
-        time: new Date()
-      }]);
+      if (!response.ok) {
+        // Status-aware messaging so users get a useful hint, not a generic line.
+        if (response.status === 429) {
+          pushBot(data.reply || "I'm getting a lot of messages right now — give me a few seconds and try again! 🤖");
+        } else if (response.status === 400) {
+          pushBot(data.reply || "Hmm, I couldn't read that one — mind rephrasing?");
+        } else {
+          pushBot("My brain glitched for a sec! ⚡ Try again, or reach Wasiq at mwasqit@gmail.com");
+        }
+        return;
+      }
+
+      pushBot(data.reply || "Hmm I had trouble — reach Wasiq at mwasqit@gmail.com");
 
       if (wantsCv) {
         setTimeout(() => {
           downloadCV();
-          setMessages(prev => [...prev, {
-            role: 'bot',
-            text: '[ CV downloading now ↓ ]',
-            time: new Date()
-          }]);
+          pushBot('[ CV downloading now ↓ ]');
         }, 800);
       }
 
-    } catch (err) {
-      setMessages(prev => [...prev, {
-        role: 'bot',
-        text: "Something went wrong! Reach Wasiq at mwasqit@gmail.com 🔋",
-        time: new Date()
-      }]);
+    } catch {
+      // Network-level failure (offline, DNS, CORS, aborted).
+      pushBot("Looks like the connection dropped! 📡 Check your internet and try again, or email Wasiq at mwasqit@gmail.com");
     } finally {
       setIsLoading(false);
       setTimeout(() => setCooldown(false), 2000);
@@ -326,9 +395,39 @@ const Waaazek = () => {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    // Enter sends; Shift+Enter inserts a newline (multiline support).
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       sendMessage(inputValue);
     }
+  };
+
+  // Copy a bot reply to the clipboard with a brief "copied" confirmation.
+  const copyMessage = async (text, idx) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(c => (c === idx ? null : c)), 1500);
+    } catch {
+      /* clipboard blocked — silently ignore */
+    }
+  };
+
+  // Clear the whole conversation and reset to the welcome state.
+  const clearChat = (e) => {
+    e?.stopPropagation();
+    setMessages([]);
+    setShowWelcome(false);
+    setPillsVisible(true);
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    // Re-show the welcome + pills shortly after, like a fresh open.
+    setTimeout(() => {
+      setShowWelcome(true);
+      gsap.fromTo('.waaazek-pill',
+        { y: 8, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.3, stagger: 0.08, delay: 0.1 }
+      );
+    }, 150);
   };
 
   return (
@@ -419,11 +518,21 @@ const Waaazek = () => {
           <div className="waaazek-chat-online">
             <div className="waaazek-online-dot"></div>
             <div className="waaazek-online-text">ONLINE</div>
-            <button className="waaazek-close-btn" onClick={closeChat}>×</button>
+            {messages.length > 0 && (
+              <button
+                className="waaazek-clear-btn"
+                onClick={clearChat}
+                title="Clear chat"
+                aria-label="Clear chat"
+              >
+                ⟲
+              </button>
+            )}
+            <button className="waaazek-close-btn" onClick={closeChat} aria-label="Close chat">×</button>
           </div>
         </div>
 
-        <div className="waaazek-messages">
+        <div className="waaazek-messages" ref={messagesBoxRef}>
           {showWelcome && (
             <div className="waaazek-bot-bubble">
               <div className="waaazek-bot-avatar">W</div>
@@ -432,13 +541,13 @@ const Waaazek = () => {
               </div>
             </div>
           )}
-          
+
           {showWelcome && pillsVisible && (
             <div className="waaazek-pills">
               {pills.map((pill, i) => (
-                <button 
-                  key={i} 
-                  className="waaazek-pill" 
+                <button
+                  key={i}
+                  className="waaazek-pill"
                   onClick={() => sendMessage(pill)}
                 >
                   {pill}
@@ -450,12 +559,22 @@ const Waaazek = () => {
           {messages.map((msg, i) => (
             <div key={i} className={msg.role === 'user' ? 'waaazek-user-bubble' : 'waaazek-bot-bubble'}>
               {msg.role === 'bot' && <div className="waaazek-bot-avatar">W</div>}
-              <div>
+              <div className="waaazek-msg-col">
                 <div className={msg.role === 'user' ? 'waaazek-user-text' : 'waaazek-bot-text'}>
-                  {msg.text}
+                  {msg.role === 'bot' ? renderMarkdown(msg.text) : msg.text}
                 </div>
-                <div className={msg.role === 'user' ? 'waaazek-user-time' : 'waaazek-time'}>
-                  {formatTime(msg.time)}
+                <div className={msg.role === 'user' ? 'waaazek-user-time' : 'waaazek-time-row'}>
+                  <span>{formatTime(msg.time)}</span>
+                  {msg.role === 'bot' && (
+                    <button
+                      className="waaazek-copy-btn"
+                      onClick={() => copyMessage(msg.text, i)}
+                      title="Copy"
+                      aria-label="Copy message"
+                    >
+                      {copiedIdx === i ? 'copied ✓' : 'copy'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -473,25 +592,34 @@ const Waaazek = () => {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Jump-to-latest — only when the user has scrolled up */}
+        {showScrollBtn && (
+          <button className="waaazek-scroll-btn" onClick={scrollToBottom} aria-label="Scroll to latest">
+            ↓
+          </button>
+        )}
+
         <div className="waaazek-input-area">
-          <input 
+          <textarea
             ref={inputRef}
-            type="text" 
-            className="waaazek-input" 
-            placeholder={isLoading ? "Waaazek is thinking..." : "Ask about Wasiq..."}
+            rows={1}
+            className="waaazek-input"
+            placeholder={isLoading ? "Waaazek is thinking..." : "Ask about Wasiq…  (Shift+Enter for new line)"}
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             disabled={isLoading}
+            maxLength={1000}
           />
-          <button 
-            className="waaazek-send-btn" 
+          <button
+            className="waaazek-send-btn"
             onClick={() => sendMessage(inputValue)}
             disabled={isLoading || !inputValue.trim()}
+            aria-label="Send message"
           >
             {isLoading ? <div className="waaazek-spinner"></div> : "→"}
           </button>

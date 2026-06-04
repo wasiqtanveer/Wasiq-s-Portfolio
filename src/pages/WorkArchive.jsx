@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -24,9 +24,10 @@ export default function WorkArchive() {
       { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
     );
 
-    // Snappy quickTo movers for the floating preview
-    xTo.current = gsap.quickTo(previewRef.current, 'x', { duration: 0.4, ease: 'power3.out' });
-    yTo.current = gsap.quickTo(previewRef.current, 'y', { duration: 0.4, ease: 'power3.out' });
+    // Snappy quickTo movers for the floating preview. Shorter duration + a
+    // tight ease so the card tracks the cursor almost 1:1 but still glides.
+    xTo.current = gsap.quickTo(previewRef.current, 'x', { duration: 0.28, ease: 'power2.out' });
+    yTo.current = gsap.quickTo(previewRef.current, 'y', { duration: 0.28, ease: 'power2.out' });
   }, { scope: container });
 
   const projects = [
@@ -36,22 +37,38 @@ export default function WorkArchive() {
     { year: 2024, title: 'Library Management System', type: 'Frontend', tech: ['React', 'Database', 'CRUD'], link: 'https://wasiqtanveer.github.io/Library-Management-System-V-1.0/' },
   ];
 
-  // Track the pointer so the preview floats next to the cursor
-  const handleMouseMove = (e) => {
+  // Track the pointer so the preview floats next to the cursor. Coalesced into
+  // one rAF flush per frame so rapid mousemove bursts never queue extra work.
+  const ptr = useRef({ x: 0, y: 0 });
+  const moveRaf = useRef(0);
+
+  const flushMove = () => {
+    moveRaf.current = 0;
     if (!xTo.current) return;
     // Offset so the card sits to the upper-right of the cursor
-    xTo.current(e.clientX + 24);
-    yTo.current(e.clientY - 80);
+    xTo.current(ptr.current.x + 24);
+    yTo.current(ptr.current.y - 80);
   };
+
+  const handleMouseMove = (e) => {
+    ptr.current.x = e.clientX;
+    ptr.current.y = e.clientY;
+    if (!moveRaf.current) moveRaf.current = requestAnimationFrame(flushMove);
+  };
+
+  useEffect(() => () => { if (moveRaf.current) cancelAnimationFrame(moveRaf.current); }, []);
 
   const handleRowEnter = (project) => {
     handleHover(true);
     if (!project.image) return;
     setActiveImage(project.image);
+    // Snap the preview to the cursor immediately so it never flies in from a
+    // stale position, then pop it in tight.
+    if (xTo.current) { xTo.current(ptr.current.x + 24); yTo.current(ptr.current.y - 80); }
     gsap.to(previewRef.current, {
       autoAlpha: 1,
       scale: 1,
-      duration: 0.35,
+      duration: 0.25,
       ease: 'power3.out',
       overwrite: 'auto',
     });
@@ -62,8 +79,8 @@ export default function WorkArchive() {
     gsap.to(previewRef.current, {
       autoAlpha: 0,
       scale: 0.92,
-      duration: 0.3,
-      ease: 'power2.inOut',
+      duration: 0.22,
+      ease: 'power2.out',
       overwrite: 'auto',
     });
   };

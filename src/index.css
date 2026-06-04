@@ -25,9 +25,9 @@
   }
 
   body {
-    background: 
+    background:
       radial-gradient(ellipse at 80% 85%, rgba(57,255,20,0.03) 0%, transparent 60%),
-      radial-gradient(ellipse at 30% 20%, #1a1812 0%, #0e0c0a 40%, #080706 100%);
+      radial-gradient(ellipse at 30% 20%, #1a1812 0%, #14110e 40%, #100d0b 100%);
     background-color: #141210;
     color: theme('colors.text');
     font-family: theme('fontFamily.body');
@@ -45,15 +45,6 @@
   }
 }
 
-
-/* Skip rendering work for sections still off-screen — big scroll-smoothness
-   win on a long page. The reserved intrinsic size keeps scroll math + GSAP
-   ScrollTrigger positions accurate before the section is painted. Never apply
-   to the hero (always on-screen at load). */
-.cv-section {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 1200px;
-}
 
 /* Base custom classes where Tailwind utilities might be too verbose */
 .hero-glow {
@@ -121,11 +112,11 @@
   background-size: 150px;
   opacity: 0.05;
   pointer-events: none;
-  z-index: -1;
-  /* Promote to its own compositor layer so each step is a cheap GPU transform,
-     and isolate paints so it never invalidates content above it. */
+  /* Promote to its own compositor layer so each step is a cheap GPU transform.
+     NOTE: no `contain` and no negative z-index here — `contain: size` on an
+     inset-sized element can collapse it to zero size and flash, and negative
+     z stacking was the black-flicker source we're removing. */
   will-change: transform;
-  contain: strict;
   animation: css-grain-anim 2s steps(3) infinite;
 }
 

@@ -78,10 +78,17 @@ function ProjectCard({ project, isEven }) {
   const tiltRef = useTilt({ max: 6, scale: 1.015 });
 
   return (
+    // perspective → tilt wrapper → card. The tilt (rotation/scale) lives on the
+    // wrapper while the scroll-reveal tween animates `.project-card` (y/opacity).
+    // They MUST be separate elements: GSAP caches transform state per element,
+    // and the persistent ScrollTrigger reveal tween on the card was colliding
+    // with the tilt's transform writes — which is why the tilt died after the
+    // first hover. Separate elements = separate caches = works every time.
     <div className="[perspective:1400px]">
+      <div ref={tiltRef} className="tilt-wrap" style={{ transformStyle: 'preserve-3d' }}>
       <div
-        ref={tiltRef}
         className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(34,32,28,0.82)] hover:border-[rgba(57,255,20,0.18)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
+        style={{ transformStyle: 'preserve-3d' }}
         onMouseEnter={handleMouseEnterCard}
         onMouseLeave={handleMouseLeaveCard}
       >
@@ -146,6 +153,7 @@ function ProjectCard({ project, isEven }) {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -74,51 +74,50 @@ export default function Background() {
     };
   }, []);
 
+  // Everything lives inside ONE fixed container that owns its own stacking
+  // context at z-index 0 (NOT negative z behind the root). Negative-z fixed
+  // layers behind a root that has a continuously-repainting WebGL canvas were
+  // mis-compositing and flashing black. Content sits above this via z-index 1.
   return (
-    <>
-      {/* WebGL 3D scene — sits furthest back (z-index -3) */}
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ zIndex: 0 }}
+    >
+      {/* WebGL 3D scene — furthest back inside this container */}
       {show3D && (
         <Suspense fallback={null}>
           <Scene3D />
         </Suspense>
       )}
 
-      {/* Readability veil — darkens the 3D so content always reads cleanly.
-          Higher opacity + a flat base layer keeps the scene subdued and the
-          centre from blooming too bright behind the hero/section text. */}
+      {/* Readability veil — single layer darkening the 3D so content reads
+          cleanly. Solid floor (backgroundColor) + gradient on top in ONE
+          element, so we never stack overlapping translucent fixed layers. */}
       <div
-        className="fixed inset-0 pointer-events-none"
+        className="absolute inset-0"
         style={{
-          zIndex: -2,
-          background:
-            'radial-gradient(ellipse 100% 80% at 50% 45%, rgba(20,18,16,0.90) 0%, rgba(20,18,16,0.80) 45%, rgba(20,18,16,0.66) 100%)',
+          zIndex: 1,
+          backgroundColor: 'rgba(20,18,16,0.30)',
+          backgroundImage:
+            'radial-gradient(ellipse 100% 80% at 50% 45%, rgba(20,18,16,0.88) 0%, rgba(20,18,16,0.78) 45%, rgba(20,18,16,0.60) 100%)',
         }}
       />
-      {/* Flat base tint — guarantees a consistent floor of darkness everywhere */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{ zIndex: -2, background: 'rgba(20,18,16,0.30)' }}
-      />
 
-    <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: -2 }}>
-      {/* Animated CSS Grain for vast performance boost */}
-      <div className="absolute inset-0 w-full h-full css-grain" />
-      
+      {/* Animated CSS Grain */}
+      <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
+
       {/* Scratch Lines */}
-      <canvas 
-        ref={scratchCanvasRef} 
-        className="absolute inset-0 w-full h-full"
-      />
-      
-      {/* Vignette — z-index -1 layer */}
-      <div 
+      <canvas ref={scratchCanvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
+
+      {/* Vignette */}
+      <div
         className="absolute inset-0"
-        style={{ 
-          zIndex: 1, 
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%)' 
+        style={{
+          zIndex: 4,
+          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%)',
         }}
       />
     </div>
-    </>
   );
 }

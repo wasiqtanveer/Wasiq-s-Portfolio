@@ -50,8 +50,10 @@ function Home({ ready, setReady }) {
       {/* Preloader */}
       {!ready && <Preloader onComplete={handlePreloaderComplete} />}
 
-      {/* Main — always in DOM, hidden until preloader completes */}
-      <div className={ready ? '' : 'opacity-0 pointer-events-none select-none'}>
+      {/* Main — always in DOM, hidden until preloader completes.
+          relative z-[1] keeps all content above the fixed Background group
+          (which owns z-index 0) without relying on negative z-index. */}
+      <div className={`relative z-[1] ${ready ? '' : 'opacity-0 pointer-events-none select-none'}`}>
         <main className="relative w-full h-full selection:bg-green selection:text-bg">
           <Hero isReady={ready} />
           <About />
@@ -113,7 +115,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home ready={ready} setReady={setReady} />} />
           <Route path="/work" element={
-            <div className={ready ? '' : 'opacity-0 pointer-events-none select-none'}>
+            <div className={`relative z-[1] ${ready ? '' : 'opacity-0 pointer-events-none select-none'}`}>
               <Suspense fallback={<SectionFallback />}>
                 <WorkArchive />
                 <Footer />

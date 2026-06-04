@@ -240,12 +240,18 @@ export default function Scene3D() {
     };
   }, []);
 
+  // Opaque theme-base backing + an explicit compositor layer (translateZ).
+  // The WebGL canvas clears to transparent, so if the GPU ever drops or
+  // mis-composites a frame there is a solid dark fill behind it instead of
+  // raw black — this is what was flashing through in large chunks.
+  // Absolute (not fixed) + z-index 0: it fills the Background container and
+  // sits at the back of that single stacking context.
   return (
     <div
       ref={mountRef}
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: -3 }}
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 0, backgroundColor: '#141210', transform: 'translateZ(0)' }}
     />
   );
 }
