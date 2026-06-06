@@ -25,25 +25,56 @@ export default function Scene3D() {
 
     const GREEN = new THREE.Color('#39FF14');
 
-    let width = window.innerWidth;
-    let height = window.innerHeight;
+    // Size from the MOUNT's actual box, not window.innerHeight. window.innerHeight
+    // disagrees with the CSS layout viewport (scrollbars, mobile toolbars, dynamic
+    // viewport units), and since the canvas is pinned top-left any shortfall left a
+    // dark gap at the bottom/edge that shifted as the scene moved — read as flicker.
+    const measure = () => {
+      const r = mount.getBoundingClientRect();
+      return {
+        w: Math.round(r.width) || window.innerWidth,
+        h: Math.round(r.height) || window.innerHeight,
+      };
+    };
+    let { w: width, h: height } = measure();
 
     // ── Renderer ────────────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true, powerPreference: 'high-performance' });
+    // Opaque dark clear color (was transparent + a CSS veil on top). Drawing the
+    // dark backdrop INSIDE the canvas means the scene reads dark for readability
+    // WITHOUT a translucent overlay that has to be re-blended over the moving
+    // canvas every frame — that per-frame blend was the flicker source.
+    const renderer = new THREE.WebGLRenderer({
+      antialias: !isMobile,
+      alpha: false,
+      powerPreference: 'high-performance',
+      // preserveDrawingBuffer keeps the buffer between frames so the page
+      // compositor can never sample a half-cleared (mid-draw) frame — that race
+      // is a classic cause of intermittent half-screen flicker on a WebGL canvas
+      // that's continuously animating and composited under HTML content.
+      preserveDrawingBuffer: true,
+      failIfMajorPerformanceCaveat: false,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-    renderer.setSize(width, height);
-    renderer.setClearColor(0x000000, 0); // transparent — CSS background shows through
+    renderer.setSize(width, height, false); // false = don't write inline px styles on the canvas
+    renderer.setClearColor(0x100d0b, 1); // opaque deep brown-black — the readability backdrop
     mount.appendChild(renderer.domElement);
+
+    // Let CSS stretch the canvas to ALWAYS cover the container exactly, so even
+    // if the drawing-buffer size lags a frame behind a resize there is never an
+    // uncovered edge gap (the thing that was reading as flicker).
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    renderer.domElement.style.display = 'block';
 
     // ── Scene & camera ──────────────────────────────────────────────────────
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x141210, 0.06);
+    scene.fog = new THREE.FogExp2(0x100d0b, 0.06); // match the clear color so the field fades into the backdrop
 
     const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
     camera.position.set(0, 0, 14);
 
     // ── Particle field ──────────────────────────────────────────────────────
-    const PARTICLE_COUNT = isMobile ? 700 : 1600;
+    const PARTICLE_COUNT = isMobile ? 1000 : 2400;
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     const speeds = new Float32Array(PARTICLE_COUNT);
     const FIELD = 40;
@@ -60,7 +91,9 @@ export default function Scene3D() {
       color: GREEN,
       size: isMobile ? 0.045 : 0.035,
       transparent: true,
-      opacity: 0.38,
+      // Subdued so the field stays a backdrop, not a distraction (this is the
+      // readability dimming the CSS veil used to provide — now done at source).
+      opacity: 0.26,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
       sizeAttenuation: true,
@@ -74,7 +107,7 @@ export default function Scene3D() {
       color: GREEN,
       wireframe: true,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.085, // subdued (readability dimming now done at source)
     });
     const SHAPE_COUNT = isMobile ? 4 : 7;
     const geometries = [
@@ -137,11 +170,12 @@ export default function Scene3D() {
 
     // ── Resize ──────────────────────────────────────────────────────────────
     const onResize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const m = measure();
+      width = m.w;
+      height = m.h;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
+      renderer.setSize(width, height, false); // keep CSS 100%/100%, only resize buffer
     };
     window.addEventListener('resize', onResize);
 
@@ -240,18 +274,17 @@ export default function Scene3D() {
     };
   }, []);
 
-  // Opaque theme-base backing + an explicit compositor layer (translateZ).
-  // The WebGL canvas clears to transparent, so if the GPU ever drops or
-  // mis-composites a frame there is a solid dark fill behind it instead of
-  // raw black — this is what was flashing through in large chunks.
-  // Absolute (not fixed) + z-index 0: it fills the Background container and
-  // sits at the back of that single stacking context.
+  // The canvas is now opaque (alpha:false) so it IS the backdrop — no extra
+  // backgroundColor or translateZ layer promotion on the mount. An extra
+  // promoted compositor layer here can itself desync with the GL layer and
+  // flicker, so the mount is kept plain. Absolute + z-index 0: fills the
+  // Background container at the back of its stacking context.
   return (
     <div
       ref={mountRef}
       aria-hidden="true"
       className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 0, backgroundColor: '#141210', transform: 'translateZ(0)' }}
+      style={{ zIndex: 0 }}
     />
   );
 }

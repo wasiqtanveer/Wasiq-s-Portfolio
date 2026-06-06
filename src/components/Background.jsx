@@ -3,6 +3,16 @@ import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
 // Lazy-load the WebGL scene so three.js doesn't block initial paint.
 const Scene3D = lazy(() => import('./Scene3D'));
 
+// ─── FLICKER DEBUG SWITCHES ─────────────────────────────────────────────────
+// We're isolating the flicker by elimination. Right now EVERYTHING is OFF except
+// the solid dark base. Confirm the page is flicker-free, then flip ONE flag to
+// true, rebuild, and look again. The first flag that brings the flicker back is
+// the culprit. Toggle order is recommended: SCENE_3D → GRAIN → SCRATCHES.
+const ENABLE_3D       = true; // the WebGL scene (particles + wireframes)
+const ENABLE_GRAIN    = true; // animated CSS film-grain layer
+const ENABLE_SCRATCHES = true; // 2D canvas scratch lines (redraw every 8s)
+// ────────────────────────────────────────────────────────────────────────────
+
 export default function Background() {
   const scratchCanvasRef = useRef(null);
   const [show3D, setShow3D] = useState(false);
@@ -10,6 +20,7 @@ export default function Background() {
   // Defer the WebGL scene until the browser is idle so it never competes
   // with the preloader / hero entrance animation.
   useEffect(() => {
+    if (!ENABLE_3D) return;
     const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200));
     const id = ric(() => setShow3D(true));
     return () => {
@@ -19,6 +30,7 @@ export default function Background() {
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_SCRATCHES) return;
     const isMobile = window.matchMedia('(pointer: coarse)').matches;
     const scratchCanvas = scratchCanvasRef.current;
     if (!scratchCanvas) return;
@@ -28,7 +40,6 @@ export default function Background() {
     const resize = () => {
       w = window.innerWidth;
       h = window.innerHeight;
-      
       scratchCanvas.width = w;
       scratchCanvas.height = h;
       drawScratches();
@@ -39,85 +50,55 @@ export default function Background() {
       const count = Math.floor(Math.random() * 3) + 4; // 4 to 6 lines
       sctx.strokeStyle = 'rgba(255,255,255,0.012)';
       sctx.lineWidth = 0.5;
-      
-      for(let i = 0; i < count; i++) {
+
+      for (let i = 0; i < count; i++) {
         sctx.beginPath();
-        // Start top-right-ish, go bottom-left-ish
         const sx = Math.random() * w * 1.5;
         const sy = -100;
         const ex = sx - Math.random() * 500 - 300;
         const ey = h + 100;
-        
         const cp1x = sx - Math.random() * 200;
         const cp1y = h * 0.3;
         const cp2x = ex + Math.random() * 200;
         const cp2y = h * 0.7;
-        
         sctx.moveTo(sx, sy);
         sctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, ex, ey);
         sctx.stroke();
       }
     };
-    
+
     let scratchInterval;
-    
     window.addEventListener('resize', resize);
     resize();
-    
-    if (!isMobile) {
-      scratchInterval = setInterval(drawScratches, 8000);
-    }
-    
+    if (!isMobile) scratchInterval = setInterval(drawScratches, 8000);
+
     return () => {
       window.removeEventListener('resize', resize);
       if (scratchInterval) clearInterval(scratchInterval);
     };
   }, []);
 
-  // Everything lives inside ONE fixed container that owns its own stacking
-  // context at z-index 0 (NOT negative z behind the root). Negative-z fixed
-  // layers behind a root that has a continuously-repainting WebGL canvas were
-  // mis-compositing and flashing black. Content sits above this via z-index 1.
+  // One fixed container, opaque dark fill (the readability backdrop + guaranteed
+  // floor). Layers are added on top only when their flag is enabled.
   return (
     <div
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 0, backgroundColor: '#100d0b' }}
     >
-      {/* WebGL 3D scene — furthest back inside this container */}
-      {show3D && (
+      {ENABLE_3D && show3D && (
         <Suspense fallback={null}>
           <Scene3D />
         </Suspense>
       )}
 
-      {/* Readability veil — single layer darkening the 3D so content reads
-          cleanly. Solid floor (backgroundColor) + gradient on top in ONE
-          element, so we never stack overlapping translucent fixed layers. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          zIndex: 1,
-          backgroundColor: 'rgba(20,18,16,0.30)',
-          backgroundImage:
-            'radial-gradient(ellipse 100% 80% at 50% 45%, rgba(20,18,16,0.88) 0%, rgba(20,18,16,0.78) 45%, rgba(20,18,16,0.60) 100%)',
-        }}
-      />
+      {ENABLE_GRAIN && (
+        <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
+      )}
 
-      {/* Animated CSS Grain */}
-      <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
-
-      {/* Scratch Lines */}
-      <canvas ref={scratchCanvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
-
-      {/* Vignette */}
-      <div
-        className="absolute inset-0"
-        style={{
-          zIndex: 4,
-          background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%)',
-        }}
-      />
+      {ENABLE_SCRATCHES && (
+        <canvas ref={scratchCanvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
+      )}
     </div>
   );
 }
