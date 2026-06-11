@@ -119,7 +119,7 @@ function CustomSelect({ value, onChange }) {
         onMouseLeave={() => handleHover(false)}
         className="w-full flex items-center justify-between pb-3.5 pt-3.5 border-b border-border text-left bg-transparent outline-none cursor-none group"
       >
-        <span className={`font-body text-[15px] transition-colors ${value ? 'text-text' : 'text-[#2a2a22]'}`}>
+        <span className={`font-body text-[15px] transition-colors ${value ? 'text-text' : 'text-[#2e2e2e]'}`}>
           {value || 'Select a subject…'}
         </span>
         <span className={`font-mono text-[12px] text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>↓</span>
@@ -171,8 +171,8 @@ function SocialRow({ social }) {
     const handle = el.querySelector('.social-handle');
     const arrow  = el.querySelector('.social-arrow');
     gsap.to(border, { scaleY: 0, duration: 0.25, ease: 'power2.inOut', overwrite: 'auto' });
-    gsap.to(name,   { color: '#E8E4DC', duration: 0.2, overwrite: 'auto' });
-    gsap.to(handle, { color: '#4a4a42', duration: 0.2, overwrite: 'auto' });
+    gsap.to(name,   { color: '#EAEAE6', duration: 0.2, overwrite: 'auto' });
+    gsap.to(handle, { color: '#565656', duration: 0.2, overwrite: 'auto' });
     gsap.to(arrow,  { x: 0, y: 0, duration: 0.2, ease: 'power2.out', overwrite: 'auto' });
     handleHover(false);
   };
@@ -325,7 +325,7 @@ export default function Contact() {
     }
   };
 
-  const inputBase = 'w-full bg-transparent border-b border-border pb-3.5 pt-3.5 font-body text-[15px] text-text outline-none placeholder:text-[#2a2a22] transition-colors duration-200 relative';
+  const inputBase = 'w-full bg-transparent border-b border-border pb-3.5 pt-3.5 font-body text-[15px] text-text outline-none placeholder:text-[#2e2e2e] transition-colors duration-200 relative';
 
   const btnLabel = {
     idle:    'Send a Message →',
@@ -340,9 +340,9 @@ export default function Contact() {
     error:   '#ff3939',
   };
   const btnColor = {
-    idle:    '#0a0a08',
-    loading: '#0a0a08',
-    success: '#0a0a08',
+    idle:    '#0a0a0a',
+    loading: '#0a0a0a',
+    success: '#0a0a0a',
     error:   '#ffffff',
   };
 
@@ -359,7 +359,7 @@ export default function Contact() {
           <div className="w-full md:w-[55%] flex flex-col">
             {/* Label */}
             <div className="font-mono text-[11px] text-muted tracking-[0.2em] uppercase mb-8 contact-left-item" style={{ opacity: 0 }}>
-              [ 04 — CONTACT ]
+              [ <span className="text-green">04</span> — CONTACT ]
             </div>
 
             {/* Headline */}
@@ -367,7 +367,7 @@ export default function Contact() {
               <div className="overflow-hidden leading-[1.1]">{splitChars('Got an idea?')}</div>
               <div className="overflow-hidden leading-[1.1]">
                 {splitChars("Let's ")}
-                {splitChars('build', 'text-green')}
+                {splitChars('build', 'text-green neon-text')}
                 {splitChars(' it.')}
               </div>
             </h2>
@@ -450,11 +450,11 @@ export default function Contact() {
                     onFocus={() => setErrors(er => ({ ...er, message: false }))}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
-                    className={`w-full bg-transparent border font-body text-[15px] text-text p-4 outline-none placeholder:text-[#2a2a22] resize-vertical min-h-[140px] transition-all duration-200
+                    className={`w-full bg-transparent border font-body text-[15px] text-text p-4 outline-none placeholder:text-[#2e2e2e] resize-vertical min-h-[140px] transition-all duration-200
                       ${errors.message ? 'border-[#ff3939]' : 'border-border focus:border-[rgba(57,255,20,0.3)] focus:bg-[rgba(57,255,20,0.02)]'}`}
                     style={{ borderColor: errors.message ? '#ff3939' : undefined }}
                   />
-                  <span className="absolute bottom-3 right-3 font-mono text-[10px] text-[#2a2a22] pointer-events-none">
+                  <span className="absolute bottom-3 right-3 font-mono text-[10px] text-[#2e2e2e] pointer-events-none">
                     {charCount} / 500
                   </span>
                 </div>
@@ -469,7 +469,7 @@ export default function Contact() {
                   background: status === 'error' ? '#ff3939' : '#39FF14',
                   opacity: status === 'loading' ? 0.5 : 1,
                   cursor: status === 'loading' ? 'not-allowed' : 'pointer',
-                  color: status === 'error' ? '#ffffff' : '#0a0a08'
+                  color: status === 'error' ? '#ffffff' : '#0a0a0a'
                 }}
                 onMouseEnter={() => handleHover(true)}
                 onMouseLeave={() => handleHover(false)}
@@ -486,7 +486,7 @@ export default function Contact() {
           {/* ════════════════════ RIGHT — INFO CARD ════════════════════ */}
           <div
             ref={rightCard}
-            className="w-full md:w-[45%] bg-surface border border-border p-8 md:p-12 flex flex-col self-stretch"
+            className="liquid-glass w-full md:w-[45%] p-8 md:p-12 flex flex-col self-stretch"
             style={{ opacity: 0 }}
           >
             {/* Availability Badge */}

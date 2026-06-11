@@ -7,11 +7,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#141210',
+        bg: '#0e0e0e',
         green: '#39FF14',
-        text: '#E8E4DC',
-        muted: '#4a4a42',
-        surface: 'rgba(26,24,21,0.72)',
+        text: '#EAEAE6',
+        muted: '#565656',
+        surface: 'rgba(24,24,24,0.72)',
         border: 'rgba(255,255,255,0.09)',
       },
       fontFamily: {

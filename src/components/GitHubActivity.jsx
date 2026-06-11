@@ -8,7 +8,7 @@ gsap.registerPlugin(ScrollTrigger);
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 function getLevel(count) {
-  if (count === 0) return '#111110';
+  if (count === 0) return '#121212';
   if (count <= 3)  return 'rgba(57,255,20,0.2)';
   if (count <= 6)  return 'rgba(57,255,20,0.45)';
   if (count <= 9)  return 'rgba(57,255,20,0.7)';
@@ -53,7 +53,7 @@ function GridSkeleton() {
   return (
     <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(52, 10px)', gridTemplateRows: 'repeat(7, 10px)', width: 'max-content' }}>
       {Array.from({ length: 364 }).map((_, i) => (
-        <div key={i} className="w-[10px] h-[10px]" style={{ background: i % 3 === 0 ? '#161614' : '#111110' }} />
+        <div key={i} className="w-[10px] h-[10px]" style={{ background: i % 3 === 0 ? '#181818' : '#121212' }} />
       ))}
     </div>
   );
@@ -161,25 +161,34 @@ export default function GitHubActivity() {
   const tipRaf = useRef(0);
   const tipPos = useRef({ x: 0, y: 0 });
 
+  // Coords relative to the .gh-grid wrapper (the tooltip is position:absolute
+  // inside it). It can't be position:fixed any more — the page-level velocity
+  // skew puts a transform on <main>, and a transformed ancestor re-anchors
+  // fixed descendants, which would throw the tooltip way off.
+  const toLocal = useCallback((e) => {
+    const host = e.currentTarget.parentElement; // .gh-grid wrapper
+    const r = host.getBoundingClientRect();
+    return { x: e.clientX - r.left + host.scrollLeft, y: e.clientY - r.top };
+  }, []);
+
   const handleGridMouseOver = useCallback((e) => {
     const cell = e.target.closest('.gh-cell');
     if (!cell) return;
     setTooltip({
       date: cell.dataset.date,
       count: Number(cell.dataset.count),
-      x: e.clientX,
-      y: e.clientY,
+      ...toLocal(e),
     });
-  }, []);
+  }, [toLocal]);
 
   const handleGridMouseMove = useCallback((e) => {
-    tipPos.current = { x: e.clientX, y: e.clientY };
+    tipPos.current = toLocal(e);
     if (tipRaf.current) return;
     tipRaf.current = requestAnimationFrame(() => {
       tipRaf.current = 0;
       setTooltip(t => (t ? { ...t, ...tipPos.current } : t));
     });
-  }, []);
+  }, [toLocal]);
 
   useEffect(() => () => { if (tipRaf.current) cancelAnimationFrame(tipRaf.current); }, []);
 
@@ -199,12 +208,12 @@ export default function GitHubActivity() {
       {/* Static Header — NEVER re-renders on filter change */}
       <div className="px-6 md:px-16 pt-[80px] md:pt-[140px] pb-10 md:pb-14">
         <div className="font-mono text-[11px] text-muted tracking-[0.2em] uppercase mb-8">
-          [ 03 — ACTIVITY ]
+          [ <span className="text-green">03</span> — ACTIVITY ]
         </div>
 
         <h2 className="font-hero font-black text-[clamp(40px,7vw,80px)] leading-[1.1] m-0 overflow-hidden">
           <div className="overflow-hidden leading-[1.1] text-text">{splitChars('Always')}</div>
-          <div className="overflow-hidden leading-[1.1] text-green">{splitChars('Building.')}</div>
+          <div className="overflow-hidden leading-[1.1] text-green neon-text">{splitChars('Building.')}</div>
         </h2>
 
         {/* Filter Pills */}
@@ -240,7 +249,7 @@ export default function GitHubActivity() {
             <div className="overflow-x-auto gh-grid relative">
               {tooltip && (
                 <div
-                  className="fixed z-50 font-mono text-[10px] bg-bg border border-border px-[10px] py-[6px] pointer-events-none whitespace-nowrap"
+                  className="absolute z-50 font-mono text-[10px] bg-bg border border-border px-[10px] py-[6px] pointer-events-none whitespace-nowrap"
                   style={{ left: tooltip.x + 14, top: tooltip.y - 38 }}
                 >
                   <span className="text-muted">{tooltip.date}:</span>&nbsp;

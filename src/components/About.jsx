@@ -81,20 +81,20 @@ export default function About() {
       {/* Left Column */}
       <div className="flex-none md:flex-[0_0_55%] flex flex-col">
         <div className="font-mono text-[11px] tracking-[0.2em] text-muted mb-6 uppercase gs-reveal">
-          [ 01 — ABOUT ]
+          [ <span className="text-green">01</span> — ABOUT ]
         </div>
         <h2 className="font-hero font-black text-[clamp(32px,4vw,52px)] leading-[1.1] text-text mb-8 gs-reveal">
           I build things that live on the<br/>
-          <span className="inline-block font-style-italic text-green translate-y-2">internet.</span>
+          <span className="inline-block font-style-italic text-green neon-text translate-y-2">internet.</span>
         </h2>
         <div className="flex flex-col gap-4 mb-10 gs-reveal">
-          <p className="font-body text-[15px] leading-[1.9] text-[#6b6b62]">
+          <p className="font-body text-[15px] leading-[1.9] text-[#7a7a76]">
             I'm a full-stack developer with a passion for writing clean, scalable code and building robust systems. I thrive in crafting experiences that not only look visually stunning but function seamlessly under the hood.
           </p>
-          <p className="font-body text-[15px] leading-[1.9] text-[#6b6b62]">
+          <p className="font-body text-[15px] leading-[1.9] text-[#7a7a76]">
             Beyond web apps, I build <span className="text-green">Chrome extensions</span> and <span className="text-green">automation tools</span> &mdash; from auto-updating Google Sheets BSR data via the Keepa API to pushing live Slack channel updates, all running hands-free.
           </p>
-          <p className="font-body text-[15px] leading-[1.9] text-[#6b6b62]">
+          <p className="font-body text-[15px] leading-[1.9] text-[#7a7a76]">
             With a strong foundation in modern web technologies and open source contributions, I focus on delivering end-to-end solutions that drive real results. Always learning, building, and solving problems.
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function About() {
       </div>
 
       {/* Right Column */}
-      <div className="w-full md:flex-1 bg-surface border border-border p-6 md:p-8 flex flex-col rounded-none">
+      <div className="liquid-glass w-full md:flex-1 p-6 md:p-8 flex flex-col">
         <div className="font-mono text-[11px] tracking-[0.2em] text-muted mb-5 uppercase">
           [ STACK ]
         </div>
@@ -138,12 +138,12 @@ export default function About() {
             { label: 'Extensions & Automation', items: ['Chrome Extensions','Keepa API','Google Sheets API','Slack API','Cron / Schedulers'] },
           ].map(group => (
             <div key={group.label}>
-              <div className="font-mono text-[9px] tracking-[0.2em] text-[#3a3a32] mb-2.5 uppercase">
+              <div className="font-mono text-[9px] tracking-[0.2em] text-[#3f3f3f] mb-2.5 uppercase">
                 {group.label}
               </div>
               <div className="flex flex-wrap gap-2">
                 {group.items.map(skill => (
-                  <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.15)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5">
+                  <div key={skill} className="skill-pill bg-[rgba(57,255,20,0.05)] border border-[rgba(57,255,20,0.18)] text-green font-mono text-[10px] uppercase tracking-[0.12em] px-3.5 py-1.5 transition-colors duration-200 hover:bg-[rgba(57,255,20,0.12)] hover:border-[rgba(57,255,20,0.45)]">
                     {skill}
                   </div>
                 ))}

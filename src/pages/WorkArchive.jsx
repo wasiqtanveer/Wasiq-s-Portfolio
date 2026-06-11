@@ -144,13 +144,13 @@ export default function WorkArchive() {
             onMouseEnter={() => handleRowEnter(p)}
             onMouseLeave={handleRowLeave}
           >
-            <div className="font-mono text-[12px] text-[#4a4a42] md:mt-1">{p.year}</div>
+            <div className="font-mono text-[12px] text-[#565656] md:mt-1">{p.year}</div>
             <div className="font-hero font-bold text-[18px] md:text-[20px] text-text group-hover:text-green transition-colors">{p.title}</div>
             <div className="font-body text-[14px] text-muted md:mt-1">{p.type}</div>
             <div className="font-mono text-[11px] text-muted flex items-center md:items-start pt-1 gap-x-2 flex-wrap">
               {p.tech.map((t, idx) => (
                 <span key={t}>
-                  {t}{idx < p.tech.length - 1 && <span className="text-[#2a2a22] ml-2">·</span>}
+                  {t}{idx < p.tech.length - 1 && <span className="text-[#2e2e2e] ml-2">·</span>}
                 </span>
               ))}
             </div>

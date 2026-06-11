@@ -23,14 +23,14 @@
     /* Lenis handles smooth scroll — don't conflict */
     scroll-behavior: auto;
     /* Opaque dark base so any viewport-height jitter never reveals raw black. */
-    background-color: #100d0b;
+    background-color: #0b0b0b;
   }
 
   body {
     background:
       radial-gradient(ellipse at 80% 85%, rgba(57,255,20,0.03) 0%, transparent 60%),
-      radial-gradient(ellipse at 30% 20%, #1a1812 0%, #14110e 40%, #100d0b 100%);
-    background-color: #100d0b;
+      radial-gradient(ellipse at 30% 20%, #1c1c1c 0%, #131313 40%, #0b0b0b 100%);
+    background-color: #0b0b0b;
     color: theme('colors.text');
     font-family: theme('fontFamily.body');
     font-weight: 300;
@@ -48,6 +48,60 @@
 }
 
 
+/* ── Liquid glass (iOS-style) card ──────────────────────────────────────────
+   The iPhone look = LIGHT translucent fill (never a dark tint), real blur with
+   boosted saturation, big rounded corners, a specular top edge, and soft depth.
+   Perf: each card is promoted to its own composited layer (translateZ +
+   contain:paint) so the blur result is cached per-frame instead of triggering
+   layout/paint work — and the canvas behind is far cheaper than it used to be
+   (DPR 1.5, no preserved buffer), which is what makes this affordable now. */
+.liquid-glass {
+  position: relative;
+  /* Near-clear smoky tint — Apple's dark glass is transparent, NOT white-filmed.
+     The blur does the work; the surface itself stays almost invisible. */
+  background: rgba(18, 18, 18, 0.22);
+  /* blur(6px): the project cards are near-viewport-sized, and backdrop blur
+     over the live canvas recomputes every frame the canvas changes — radius is
+     the main cost multiplier, and 6px still reads as glass over a dim field. */
+  backdrop-filter: blur(6px) saturate(150%);
+  -webkit-backdrop-filter: blur(6px) saturate(150%);
+  /* Light lives only on the EDGE (hairline rim), never as a wash on the face. */
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0; /* square — matches the site's brutalist edges */
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10);   /* subtle top rim catch */
+  transform: translateZ(0);
+  contain: paint;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Interactive cards deepen slightly and pick up a green rim on hover —
+   still no white wash, just the edge responding. */
+.liquid-glass-interactive:hover {
+  background: rgba(24, 24, 24, 0.30);
+  border-color: rgba(57, 255, 20, 0.25);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(57, 255, 20, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* No backdrop-filter support → denser translucent fill so it still reads. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: rgba(36, 36, 36, 0.82);
+  }
+}
+
+/* Neon glow for the green accent words in section headings — the static
+   text-shadow is painted once, costs nothing at runtime. */
+.neon-text {
+  text-shadow:
+    0 0 12px rgba(57, 255, 20, 0.45),
+    0 0 36px rgba(57, 255, 20, 0.18);
+}
+
 /* Base custom classes where Tailwind utilities might be too verbose */
 .hero-glow {
   position: absolute;
@@ -63,8 +117,8 @@
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0a0a08; }
-::-webkit-scrollbar-thumb { background: #1e1e18; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb { background: #202020; }
 ::-webkit-scrollbar-thumb:hover { background: #39FF14; }
 
 /* Animated Cursor Gradient */

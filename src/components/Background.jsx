@@ -84,13 +84,28 @@ export default function Background() {
     <div
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden"
-      style={{ zIndex: 0, backgroundColor: '#100d0b' }}
+      style={{ zIndex: 0, backgroundColor: '#0b0b0b' }}
     >
       {ENABLE_3D && show3D && (
         <Suspense fallback={null}>
           <Scene3D />
         </Suspense>
       )}
+
+      {/* Neon ambience — two static green glow pools breathing out of the black.
+          Static gradients = one-time paint, compositor-cheap (the old flicker
+          came from an ANIMATED layer edge, never from static overlays). */}
+      <div
+        className="absolute inset-0"
+        style={{
+          zIndex: 1,
+          background:
+            'radial-gradient(ellipse 50% 40% at 12% 18%, rgba(57,255,20,0.05) 0%, transparent 70%),' +
+            'radial-gradient(ellipse 55% 45% at 88% 78%, rgba(57,255,20,0.04) 0%, transparent 70%),' +
+            // caldera under-light — molten glow seeping up from below the fold
+            'radial-gradient(ellipse 85% 38% at 50% 106%, rgba(57,255,20,0.10) 0%, rgba(57,255,20,0.03) 50%, transparent 75%)',
+        }}
+      />
 
       {ENABLE_GRAIN && (
         <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
@@ -99,6 +114,15 @@ export default function Background() {
       {ENABLE_SCRATCHES && (
         <canvas ref={scratchCanvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
       )}
+
+      {/* Charcoal vignette — pulls the eye to centre, deepens the volcanic black */}
+      <div
+        className="absolute inset-0"
+        style={{
+          zIndex: 4,
+          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%)',
+        }}
+      />
     </div>
   );
 }

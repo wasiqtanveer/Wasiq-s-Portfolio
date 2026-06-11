@@ -14,7 +14,32 @@ export default function Marquee() {
       ease: 'none',
       repeat: -1,
     });
-    return () => tweenRef.current?.kill();
+
+    // Premium touch: the marquee accelerates with scroll velocity and eases
+    // back to cruise speed when you stop. Lenis mounts in a parent effect
+    // (after this child effect), so attach lazily via a short rAF retry.
+    let speedTo = null;
+    let lenis = null;
+    let tries = 0;
+    let rafId = 0;
+    const onScroll = (e) => {
+      if (!speedTo && tweenRef.current) {
+        speedTo = gsap.quickTo(tweenRef.current, 'timeScale', { duration: 0.6, ease: 'power2.out' });
+      }
+      if (speedTo) speedTo(1 + Math.min(Math.abs(e.velocity) * 0.05, 2.5));
+    };
+    const attach = () => {
+      lenis = window.__lenis;
+      if (lenis) { lenis.on('scroll', onScroll); return; }
+      if (tries++ < 120) rafId = requestAnimationFrame(attach);
+    };
+    attach();
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (lenis) lenis.off('scroll', onScroll);
+      tweenRef.current?.kill();
+    };
   }, [prefersReduced]);
 
   const items = [
@@ -25,7 +50,7 @@ export default function Marquee() {
 
   return (
     <div
-      className="relative z-10 overflow-hidden w-full whitespace-nowrap border-t border-[#1e1e18] py-4 mt-auto"
+      className="relative z-10 overflow-hidden w-full whitespace-nowrap border-t border-[#202020] py-4 mt-auto"
       role="marquee"
       aria-label="Tech stack"
       onMouseEnter={() => tweenRef.current?.pause()}
@@ -36,7 +61,7 @@ export default function Marquee() {
           <React.Fragment key={gi}>
             {items.map((tech, idx) => (
               <React.Fragment key={`${gi}-${idx}`}>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[#4a4a42] px-7">{tech}</span>
+                <span className="font-mono text-[11px] uppercase tracking-widest text-[#565656] px-7">{tech}</span>
                 <span className="inline-block text-[#39FF14]">·</span>
               </React.Fragment>
             ))}

@@ -39,7 +39,7 @@ function FooterMarquee() {
   const items = ["Available for work", "Let's collaborate", "Based in Pakistan", "Open to remote"];
   const segment = items.map((item, i) => (
     <span key={i} className="inline-flex items-center gap-5 mx-5">
-      <span className="font-mono text-[11px] uppercase tracking-widest text-[#2a2a22]">{item}</span>
+      <span className="font-mono text-[11px] uppercase tracking-widest text-[#2e2e2e]">{item}</span>
       <span className="font-mono text-[11px] text-green opacity-30" aria-hidden="true">·</span>
     </span>
   ));
@@ -152,10 +152,10 @@ export default function Footer() {
 
       {/* Bottom Row */}
       <div className="px-6 md:px-16 py-5 flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
-        <p className="footer-copy font-body text-[12px] text-[#2a2a22] opacity-0">
+        <p className="footer-copy font-body text-[12px] text-[#2e2e2e] opacity-0">
           © 2025 Wasiq Tanveer — Built with React + GSAP
         </p>
-        <p className="footer-copy font-body text-[12px] text-[#2a2a22] opacity-0">
+        <p className="footer-copy font-body text-[12px] text-[#2e2e2e] opacity-0">
           Designed &amp; Developed by Wasiq Tanveer
         </p>
       </div>

@@ -454,10 +454,10 @@ const Waaazek = () => {
               <circle cx="84" cy="46" r="3" fill="rgba(57,255,20,0.3)" />
               
               {/* Head */}
-              <rect x="22" y="20" width="56" height="52" rx="10" fill="#111110" stroke="#39FF14" strokeWidth="1.5" />
+              <rect x="22" y="20" width="56" height="52" rx="10" fill="#121212" stroke="#39FF14" strokeWidth="1.5" />
               
               {/* Face screen */}
-              <rect x="30" y="30" width="40" height="30" rx="6" fill="#0a0a08" stroke="rgba(57,255,20,0.2)" />
+              <rect x="30" y="30" width="40" height="30" rx="6" fill="#0a0a0a" stroke="rgba(57,255,20,0.2)" />
               
               {/* Eyes */}
               <g filter="drop-shadow(0 0 4px rgba(57,255,20,0.9))">
@@ -472,11 +472,11 @@ const Waaazek = () => {
             {/* Body */}
             <g>
               {/* Arm bumps */}
-              <circle cx="21" cy="85" r="6" fill="#111110" stroke="rgba(57,255,20,0.2)" />
-              <circle cx="79" cy="85" r="6" fill="#111110" stroke="rgba(57,255,20,0.2)" />
+              <circle cx="21" cy="85" r="6" fill="#121212" stroke="rgba(57,255,20,0.2)" />
+              <circle cx="79" cy="85" r="6" fill="#121212" stroke="rgba(57,255,20,0.2)" />
               
               {/* Main body */}
-              <rect x="27" y="72" width="46" height="26" rx="8" fill="#111110" stroke="rgba(57,255,20,0.2)" />
+              <rect x="27" y="72" width="46" height="26" rx="8" fill="#121212" stroke="rgba(57,255,20,0.2)" />
               
               {/* Chest slots */}
               <line x1="38" y1="80" x2="62" y2="80" stroke="rgba(57,255,20,0.25)" strokeWidth="1" strokeLinecap="round" />
@@ -490,7 +490,7 @@ const Waaazek = () => {
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#39FF14' }}>
             {idleMessage || "HI! I'M WAAAZEK 👋"}
           </div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '10px', color: '#4a4a42', marginTop: '4px' }}>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '10px', color: '#565656', marginTop: '4px' }}>
             [ click to chat ]
           </div>
         </div>

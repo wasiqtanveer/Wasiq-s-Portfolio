@@ -246,7 +246,7 @@ export default function Hero({ isReady }) {
         </div>
 
         <h1 className="font-hero font-black text-[clamp(52px,14vw,13vw)] md:text-[clamp(64px,12vw,13vw)] leading-[0.92] tracking-[-0.03em] text-text m-0 select-none overflow-visible min-h-[120px] md:min-h-[160px] pt-4 will-change-[transform] [transform:translateZ(0)]">
-          <span className="block overflow-visible"><span className="inline-block name-part-1 opacity-0">Was<span style={{ backgroundImage: 'linear-gradient(to bottom, #39FF14 0%, #39FF14 28%, #E8E4DC 28%, #E8E4DC 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', paddingTop: '0.05em', marginTop: '-0.05em', paddingBottom: '0.05em' }}>i</span>q</span></span>
+          <span className="block overflow-visible"><span className="inline-block name-part-1 opacity-0">Was<span style={{ backgroundImage: 'linear-gradient(to bottom, #39FF14 0%, #39FF14 28%, #EAEAE6 28%, #EAEAE6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', paddingTop: '0.05em', marginTop: '-0.05em', paddingBottom: '0.05em' }}>i</span>q</span></span>
           <span className="block overflow-visible"><span className="inline-block name-part-2 opacity-0">Tanveer</span></span>
         </h1>
 
@@ -265,7 +265,7 @@ export default function Hero({ isReady }) {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg_viewBox=%270_0_256_256%27_xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cfilter_id=%27noise%27%3E%3CfeTurbulence_type=%27fractalNoise%27_baseFrequency=%270.9%27_numOctaves=%274%27_stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect_width=%27100%25%27_height=%27100%25%27_filter=%27url(%23noise)%27_opacity=%270.12%27/%3E%3C/svg%3E')] bg-[length:150px] opacity-55 z-[2] pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[rgba(57,255,20,0.3)] to-transparent z-[3]" />
         
-        <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#181814] to-[#0f0f0d]">
+        <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#171717] to-[#0f0f0f]">
           <img
             ref={imgRef}
             src={photoAsset}

@@ -62,7 +62,7 @@ const handleMouseEnterCard = (e) => {
   tl.to(title, { x: 3, color: '#39FF14', duration: 0.05 })
     .to(title, { x: -2, duration: 0.05 })
     .to(title, { x: 1, color: '#39FF14', duration: 0.04 })
-    .to(title, { x: 0, color: '#E8E4DC', duration: 0.05 });
+    .to(title, { x: 0, color: '#EAEAE6', duration: 0.05 });
 };
 
 const handleMouseLeaveCard = (e) => {
@@ -71,7 +71,7 @@ const handleMouseLeaveCard = (e) => {
   const tBorder = card.querySelector('.left-green-border');
 
   gsap.to(tBorder, { scaleY: 0, duration: 0.4, ease: 'power2.inOut', overwrite: 'auto' });
-  gsap.set(title, { x: 0, color: '#E8E4DC' });
+  gsap.set(title, { x: 0, color: '#EAEAE6' });
 };
 
 function ProjectCard({ project, isEven }) {
@@ -86,9 +86,10 @@ function ProjectCard({ project, isEven }) {
     // first hover. Separate elements = separate caches = works every time.
     <div className="[perspective:1400px]">
       <div ref={tiltRef} className="tilt-wrap" style={{ transformStyle: 'preserve-3d' }}>
+      {/* liquid-glass note: backdrop-filter forces transform-style:flat, so no
+          preserve-3d here — the tilt lives on .tilt-wrap and is unaffected. */}
       <div
-        className="project-card relative w-full bg-surface border border-border p-[48px] md:p-[48px_56px] rounded-none group transition-colors duration-300 hover:bg-[rgba(34,32,28,0.82)] hover:border-[rgba(57,255,20,0.18)] flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px]"
-        style={{ transformStyle: 'preserve-3d' }}
+        className="project-card liquid-glass liquid-glass-interactive relative w-full p-[48px] md:p-[48px_56px] group flex flex-col md:flex-row items-stretch gap-12 md:gap-[64px] overflow-hidden"
         onMouseEnter={handleMouseEnterCard}
         onMouseLeave={handleMouseLeaveCard}
       >
@@ -125,7 +126,7 @@ function ProjectCard({ project, isEven }) {
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[11px] text-[#4a4a42] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
+              className="font-mono text-[11px] text-[#565656] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
               onMouseEnter={() => handleHoverGlobal(true)}
               onMouseLeave={() => handleHoverGlobal(false)}
             >
@@ -148,7 +149,7 @@ function ProjectCard({ project, isEven }) {
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (
-            <div className="font-hero text-[64px] text-[#161614] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
+            <div className="font-hero text-[64px] text-[#181818] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
               {project.initials}
             </div>
           )}
@@ -226,7 +227,7 @@ export default function Projects() {
       <div className="px-6 md:px-16 pt-[80px] md:pt-[140px] pb-12 md:pb-16">
         <div className="flex justify-between items-center w-full mb-8">
           <div className="font-mono text-[11px] text-muted tracking-[0.2em] uppercase">
-            [ 02 — WORK ]
+            [ <span className="text-green">02</span> — WORK ]
           </div>
           <div className="relative group cursor-none inline-block">
             <Link 
@@ -243,7 +244,7 @@ export default function Projects() {
         
         <h2 className="font-hero font-black text-[clamp(40px,7vw,80px)] leading-[1.1] text-text m-0 overflow-hidden">
           <div className="overflow-hidden leading-[1.1]">{splitTextToChars('Selected')}</div>
-          <div className="overflow-hidden leading-[1.1] text-green">{splitTextToChars('Projects.')}</div>
+          <div className="overflow-hidden leading-[1.1] text-green neon-text">{splitTextToChars('Projects.')}</div>
         </h2>
       </div>
 

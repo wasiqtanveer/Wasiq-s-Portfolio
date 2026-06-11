@@ -54,7 +54,7 @@ function Home({ ready, setReady }) {
           relative z-[1] keeps all content above the fixed Background group
           (which owns z-index 0) without relying on negative z-index. */}
       <div className={`relative z-[1] ${ready ? '' : 'opacity-0 pointer-events-none select-none'}`}>
-        <main className="relative w-full h-full selection:bg-green selection:text-bg">
+        <main id="velocity-wrap" className="relative w-full h-full selection:bg-green selection:text-bg">
           <Hero isReady={ready} />
           <About />
           <Suspense fallback={<SectionFallback />}>
@@ -93,6 +93,11 @@ function App() {
     // Without this, scroll-driven animations (incl. the top progress bar) lag
     // or never fire because ScrollTrigger reads the native scroll, not Lenis.
     lenis.on('scroll', ScrollTrigger.update);
+
+    // NOTE: the scroll velocity-skew effect was removed deliberately. Skewing
+    // <main> every scroll tick invalidated the backdrop-filter on the liquid
+    // glass cards each frame (the blur must resample a changed backdrop), which
+    // tanked scroll FPS. Glass and whole-page transform effects don't mix.
 
     const rafCb = (time) => lenis.raf(time * 1000);
     gsap.ticker.add(rafCb);
