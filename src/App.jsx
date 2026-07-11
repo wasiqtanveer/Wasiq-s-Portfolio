@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -29,6 +29,12 @@ const isTouchDevice = () =>
 const SectionFallback = () => (
   <div className="w-full border-t border-border" style={{ minHeight: '100px' }} />
 );
+
+// Back-compat: rewrite old HashRouter URLs (/#/work -> /work) before the
+// router mounts, so stale external links still land on the right page.
+if (typeof window !== 'undefined' && window.location.hash.startsWith('#/')) {
+  window.history.replaceState(null, '', window.location.hash.slice(1));
+}
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -111,7 +117,7 @@ function App() {
   }, []);
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Background />
       <ScrollToTop />
       <ErrorBoundary>
@@ -132,7 +138,7 @@ function App() {
       </ErrorBoundary>
       <Analytics />
       <SpeedInsights />
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 

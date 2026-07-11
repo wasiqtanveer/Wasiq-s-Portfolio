@@ -34,6 +34,13 @@ const playTick = () => {
 };
 
 export default function WorkArchive() {
+  // Per-route SEO: unique title while on /work, restored on unmount
+  useEffect(() => {
+    const prevTitle = document.title;
+    document.title = 'All Projects — Wasiq Tanveer';
+    return () => { document.title = prevTitle; };
+  }, []);
+
   const container = useRef();
   const previewRef = useRef();
   const previewImgRef = useRef();

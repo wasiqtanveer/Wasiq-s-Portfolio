@@ -1,0 +1,19 @@
+# Wasiq Tanveer — Full Stack Developer
+
+> Personal portfolio of Wasiq Tanveer, a Full Stack Developer based in Pakistan
+> building clean, scalable web applications with React and Node.js.
+> Open to freelance and full-time opportunities.
+
+## Pages
+
+- [Home](https://wasiq-portfolio-delta.vercel.app/): Introduction, about, selected projects, GitHub activity, and contact
+- [All Projects](https://wasiq-portfolio-delta.vercel.app/work): Complete project archive
+
+## Links
+
+- [GitHub](https://github.com/wasiqtanveer)
+- [CV (PDF)](https://wasiq-portfolio-delta.vercel.app/Wasiq_CV_v2.pdf)
+
+## Skills
+
+React, Node.js, JavaScript, Full Stack Development, Three.js, GSAP, Tailwind CSS
