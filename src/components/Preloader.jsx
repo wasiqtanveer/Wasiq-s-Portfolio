@@ -10,35 +10,42 @@ export default function Preloader({ onComplete }) {
   const counterBottomRef = useRef(null);
 
   useEffect(() => {
-    // Asset preloading + minimum time lock
-    const minimumTime = new Promise(res => setTimeout(res, 2500));
-    const assetsReady = Promise.all([
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let done = false;
+
+    // ── Real progress ────────────────────────────────────────────────────
+    // The counter used to read a fixed 2s tween that had nothing to do with
+    // loading, so it could sit at "100" while the gate was still shut — the
+    // number was decoration wearing the costume of a status. It now counts
+    // actual completed load signals, so 100 means 100.
+    const signals = [
       document.fonts.ready,
       new Promise(res => {
         const img = new Image();
         img.onload = res;
         img.onerror = res; // resolve even on error so preloader isn't stuck
         img.src = photoAsset;
-      })
-    ]);
+      }),
+    ];
 
-    // Run fill animation immediately (visual only, not gated)
-    const fillTween = gsap.fromTo('.preloader-fill',
-      { width: '0%' },
-      {
-        width: '100%',
-        duration: 2,
-        ease: 'power2.inOut',
-        delay: 0.6,
-        onUpdate: function() {
-          const progress = Math.round(this.progress() * 100);
-          if (counterTopRef.current) counterTopRef.current.innerText = progress;
-          if (counterBottomRef.current) counterBottomRef.current.innerText = progress;
-        }
-      }
-    );
+    let loaded = 0;
+    const paint = (pct) => {
+      const v = Math.round(pct);
+      if (counterTopRef.current) counterTopRef.current.innerText = v;
+      if (counterBottomRef.current) counterBottomRef.current.innerText = v;
+      gsap.to('.preloader-fill', { width: `${v}%`, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+    };
 
-    // Entrance animation
+    signals.forEach(p => p.then(() => {
+      loaded += 1;
+      paint((loaded / signals.length) * 100);
+    }));
+
+    // Floor, not a lock. 2500ms was long enough that a returning visitor paid
+    // ~3.8s of held-back content on every hard load; 700ms is just enough for
+    // the split to read as deliberate rather than as a flash.
+    const minimumTime = new Promise(res => setTimeout(res, reduce ? 0 : 700));
+
     const entranceTl = gsap.timeline();
     entranceTl
       .fromTo('.preloader-inner',
@@ -51,32 +58,47 @@ export default function Preloader({ onComplete }) {
         0.2
       );
 
-    // Gate exit on BOTH assets loaded AND minimum time passed
-    Promise.all([assetsReady, minimumTime]).then(() => {
-      // Exit split animation
-      const exitTl = gsap.timeline({
+    const finish = () => {
+      if (done) return;
+      done = true;
+      paint(100);
+
+      // Reduced motion: no split wipe, just clear the gate.
+      if (reduce) {
+        gsap.to(container.current, { opacity: 0, duration: 0.15, onComplete: () => onComplete?.() });
+        return;
+      }
+
+      gsap.timeline({
         onComplete: () => {
           // Small fade-out before unmounting to prevent flash
           gsap.to(container.current, {
             opacity: 0,
             duration: 0.2,
-            onComplete: () => {
-              if (onComplete) onComplete();
-            }
+            onComplete: () => onComplete?.(),
           });
         }
-      });
-
-      exitTl
+      })
         .to(topHalf.current, { y: '-100%', duration: 1.1, ease: 'power4.inOut' }, 0)
         .to(bottomHalf.current, { y: '100%', duration: 1.1, ease: 'power4.inOut' }, 0);
-    });
+    };
+
+    Promise.all([...signals, minimumTime]).then(finish);
+
+    // Escape skips the rest of the intro. Bound on the document rather than the
+    // overlay, which stays pointer-events-none so it never intercepts input.
+    const onKey = (e) => { if (e.key === 'Escape') finish(); };
+    document.addEventListener('keydown', onKey);
+
+    // Hard ceiling: if a font or the image never resolves, the site still opens.
+    const failsafe = setTimeout(finish, 6000);
 
     return () => {
-      fillTween.kill();
       entranceTl.kill();
+      clearTimeout(failsafe);
+      document.removeEventListener('keydown', onKey);
     };
-  }, []);
+  }, [onComplete]);
 
   const renderContent = (isTop) => (
     <div className="absolute inset-0 w-full h-full pointer-events-none">
@@ -103,7 +125,14 @@ export default function Preloader({ onComplete }) {
   );
 
   return (
-    <div ref={container} className="fixed inset-0 z-[99999] pointer-events-none overflow-hidden">
+    // pointer-events are live so a tap anywhere skips the intro.
+    <div
+      ref={container}
+      className="fixed inset-0 z-[99999] overflow-hidden cursor-pointer"
+      role="progressbar"
+      aria-label="Loading site — press Escape to skip"
+      aria-busy="true"
+    >
       {/* Top Half Slice */}
       <div
         ref={topHalf}

@@ -51,7 +51,7 @@ export default function Marquee() {
   return (
     <div
       className="relative z-10 overflow-hidden w-full whitespace-nowrap border-t border-[#202020] py-4 mt-auto"
-      role="marquee"
+      role="group"
       aria-label="Tech stack"
       onMouseEnter={() => tweenRef.current?.pause()}
       onMouseLeave={() => tweenRef.current?.resume()}
@@ -61,7 +61,7 @@ export default function Marquee() {
           <React.Fragment key={gi}>
             {items.map((tech, idx) => (
               <React.Fragment key={`${gi}-${idx}`}>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[#565656] px-7">{tech}</span>
+                <span className="font-mono text-[11px] uppercase tracking-widest text-muted px-7">{tech}</span>
                 <span className="inline-block text-[#39FF14]">·</span>
               </React.Fragment>
             ))}

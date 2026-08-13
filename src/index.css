@@ -12,11 +12,54 @@
   /* Custom cursor — desktop only.
      Set on html and inherited rather than matching the universal `*` selector
      with !important against every element on every style recalc. `cursor`
-     inherits, so this hides the native cursor everywhere just the same. */
+     inherits, so this hides the native cursor everywhere just the same.
+
+     Scoped to :not(:focus-visible): a keyboard user has no pointer to replace,
+     so hiding the cursor on the element they just tabbed to left them with no
+     position indicator at all. Anything holding keyboard focus keeps a real
+     cursor alongside its focus ring. */
   @media (pointer: fine) {
     html { cursor: none; }
     a, button, input, textarea, select, [role="button"], label { cursor: none; }
+    a:focus-visible, button:focus-visible, input:focus-visible,
+    textarea:focus-visible, select:focus-visible,
+    [role="button"]:focus-visible, [tabindex]:focus-visible { cursor: auto; }
   }
+
+  /* ── Focus ring ───────────────────────────────────────────────────────────
+     The custom cursor replaces the pointer; nothing was replacing the focus
+     outline, so keyboard users had neither. One token ring, everywhere, on
+     :focus-visible only so it never fires on mouse clicks. */
+  :focus-visible {
+    outline: 2px solid theme('colors.green');
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+
+  /* Skip link — visually hidden until focused, then pinned top-left. */
+  .skip-link {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    transform: translateY(-120%);
+    padding: 0.75rem 1.25rem;
+    background: theme('colors.green');
+    color: theme('colors.bg');
+    font-family: theme('fontFamily.mono');
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: transform 0.18s ease;
+  }
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline-offset: -4px;
+  }
+
+  /* Browser surfaces the design still owns. */
+  ::selection { background: theme('colors.green'); color: theme('colors.bg'); }
+  :root { accent-color: theme('colors.green'); caret-color: theme('colors.green'); }
 
   html {
     font-size: 16px;
@@ -37,12 +80,28 @@
     overflow-x: hidden;
   }
 
-  /* Reduced motion — show all elements at final state immediately */
+  /* ── Reduced motion ───────────────────────────────────────────────────────
+     This site is deliberately dense with motion, so "reduce" has to mean
+     something more considered than a blanket kill. Killing every duration to
+     0.01ms also destroys the transitions that carry MEANING — a hover state
+     that snaps, an error border that appears with no travel, a panel that
+     teleports open — which leaves the interface harder to follow, not calmer.
+
+     So: perpetual and decorative animation stops outright (that is the part
+     that actually causes discomfort), while state-change transitions survive
+     at a short, non-animated-feeling duration so feedback and hierarchy are
+     still legible. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      transition-duration: 120ms !important;
+    }
+    /* Perpetual decoration has no reduced-motion equivalent — remove it. */
+    .css-grain::after,
+    .animate-spin-slow,
+    .cursor-gradient {
+      animation: none !important;
     }
   }
 }
@@ -100,19 +159,6 @@
   text-shadow:
     0 0 12px rgba(57, 255, 20, 0.45),
     0 0 36px rgba(57, 255, 20, 0.18);
-}
-
-/* Base custom classes where Tailwind utilities might be too verbose */
-.hero-glow {
-  position: absolute;
-  width: 520px;
-  height: 520px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(57,255,20,0.06) 0%, transparent 70%);
-  right: 18%;
-  top: 12%;
-  pointer-events: none;
-  z-index: 1;
 }
 
 /* Custom Scrollbar */

@@ -85,7 +85,7 @@ export default function About() {
         </div>
         <h2 className="font-hero font-black text-[clamp(32px,4vw,52px)] leading-[1.1] text-text mb-8 gs-reveal">
           I build things that live on the<br/>
-          <span className="inline-block font-style-italic text-green neon-text translate-y-2">internet.</span>
+          <span className="inline-block italic text-green neon-text translate-y-2">internet.</span>
         </h2>
         <div className="flex flex-col gap-4 mb-10 gs-reveal">
           <p className="font-body text-[15px] leading-[1.9] text-[#7a7a76]">

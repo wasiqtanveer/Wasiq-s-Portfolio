@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Link } from 'react-router-dom';
 import useScrollReveal from '../hooks/useScrollReveal';
 import useTilt from '../hooks/useTilt';
+import { prefetchWork } from '../lazyRoutes';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -126,7 +127,7 @@ function ProjectCard({ project, isEven }) {
               href={project.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[11px] text-[#565656] border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
+              className="font-mono text-[11px] text-muted border border-border px-[22px] py-[10px] transition-all duration-200 hover:border-green hover:text-green"
               onMouseEnter={() => handleHoverGlobal(true)}
               onMouseLeave={() => handleHoverGlobal(false)}
             >
@@ -135,21 +136,24 @@ function ProjectCard({ project, isEven }) {
           </div>
         </div>
 
-        {/* Image Side — pops further forward in 3D (hidden on mobile) */}
+        {/* Image side — pops further forward in 3D.
+            This was `hidden md:flex`, so phone visitors read three text blocks
+            and never actually saw any of the work on a portfolio's project
+            section. It shows at every width now, above the copy on mobile. */}
         <div
-          className={`hidden md:flex relative overflow-hidden w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}
+          className={`flex relative overflow-hidden w-full md:w-1/2 aspect-[16/9] bg-[rgba(255,255,255,0.02)] border border-border items-center justify-center transition-colors duration-300 group-hover:bg-[rgba(255,255,255,0.04)] group-hover:border-[rgba(57,255,20,0.12)] order-1 mb-6 md:mb-0 ${isEven ? 'md:order-1' : 'md:order-2'}`}
           style={{ transform: 'translateZ(55px)' }}
         >
           {project.image ? (
             <img
               src={project.image}
-              alt={project.title}
+              alt={`${project.title} — project screenshot`}
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.04]"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (
-            <div className="font-hero text-[64px] text-[#181818] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
+            <div aria-hidden="true" className="font-hero text-[64px] text-[#181818] group-hover:text-[rgba(57,255,20,0.06)] transition-colors duration-300 select-none">
               {project.initials}
             </div>
           )}
@@ -230,10 +234,12 @@ export default function Projects() {
             [ <span className="text-green">02</span> — WORK ]
           </div>
           <div className="relative group cursor-none inline-block">
-            <Link 
+            <Link
               to="/work"
               className="font-mono text-[11px] text-green uppercase no-underline transition-colors block"
-              onMouseEnter={() => handleHoverGlobal(true)}
+              // Warm the /work chunk on hover so the click has nothing to wait for.
+              onMouseEnter={() => { handleHoverGlobal(true); prefetchWork(); }}
+              onFocus={prefetchWork}
               onMouseLeave={() => handleHoverGlobal(false)}
             >
               View All →
@@ -260,10 +266,11 @@ export default function Projects() {
         <div className="font-body text-[14px] text-muted gs-reveal" style={{ opacity: 0 }}>
           Looking for more? View the complete archive.
         </div>
-        <Link 
+        <Link
           to="/work"
           className="font-mono text-[11px] text-muted border border-border px-6 py-3 transition-colors duration-200 hover:border-green hover:text-green gs-reveal"
-          onMouseEnter={() => handleHoverGlobal(true)}
+          onMouseEnter={() => { handleHoverGlobal(true); prefetchWork(); }}
+          onFocus={prefetchWork}
           onMouseLeave={() => handleHoverGlobal(false)}
           style={{ opacity: 0 }}
         >

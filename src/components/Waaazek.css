@@ -87,8 +87,18 @@
 }
 
 @media (max-width: 768px) {
+  /* The speech bubble does not fit beside the robot at phone widths, and it
+     was simply hidden — leaving an unexplained robot pinned mid-screen at the
+     right edge, directly in the one-handed thumb path, that opened a 70vh
+     panel when brushed. It now sits low and tucked, out of the reading and
+     scrolling path, and carries a visible label instead of no explanation. */
   .waaazek-speech {
     display: none;
+  }
+
+  .waaazek-wrapper {
+    right: -46px;
+    bottom: 24px;
   }
 }
 
@@ -176,7 +186,7 @@
 .waaazek-chat-subtitle {
   font-family: 'DM Sans', sans-serif;
   font-size: 10px;
-  color: #565656;
+  color: #8A8A85;
   margin-top: 4px;
   line-height: 1;
 }
@@ -205,7 +215,7 @@
 .waaazek-close-btn {
   font-family: 'JetBrains Mono', monospace;
   font-size: 22px;
-  color: #565656;
+  color: #8A8A85;
   transition: color 0.2s;
   cursor: pointer;
   background: none;
@@ -267,7 +277,7 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 2px 12px 12px 12px;
-  border-left: 2px solid rgba(57, 255, 20, 0.3);
+  border-left: 1px solid rgba(57, 255, 20, 0.3);
   padding: 10px 13px;
   max-width: 85%;
   font-family: 'DM Sans', sans-serif;
@@ -279,7 +289,7 @@
 .waaazek-time {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: #202020;
+  color: #7A7A75;
   margin-top: 4px;
 }
 
@@ -302,7 +312,7 @@
 .waaazek-user-time {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: #2e2e2e;
+  color: #7A7A75;
   margin-top: 4px;
   text-align: right;
 }
@@ -386,7 +396,7 @@
 .waaazek-input::-webkit-scrollbar-thumb { background: rgba(57, 255, 20, 0.2); }
 
 .waaazek-input::placeholder {
-  color: #2e2e2e;
+  color: #7A7A75;
 }
 
 .waaazek-input:focus {
@@ -439,7 +449,7 @@
 .waaazek-clear-btn {
   font-family: 'JetBrains Mono', monospace;
   font-size: 15px;
-  color: #565656;
+  color: #8A8A85;
   background: none;
   border: none;
   cursor: pointer;
@@ -461,7 +471,7 @@
 .waaazek-time-row > span {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: #2e2e2e;
+  color: #7A7A75;
 }
 
 .waaazek-copy-btn {

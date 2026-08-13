@@ -1,45 +1,20 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useId } from 'react';
 import emailjs from '@emailjs/browser';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import useScrollReveal from '../hooks/useScrollReveal';
+import { playTick } from '../hooks/useSound';
+import { CONTACT_EMAIL, CONTACT_MAILTO, RESPONSE_TIME, TIMEZONE, SOCIAL_LINKS } from '../siteConfig';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const handleHover = (hovered) =>
   window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
 
-// ─── Shared Audio Context for Tactile Typing ───────────────────────────────
-
-let typingAudioCtx = null;
-const playTypingSound = () => {
-  try {
-    if (!typingAudioCtx) {
-      typingAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (typingAudioCtx.state === 'suspended') typingAudioCtx.resume();
-    
-    const osc = typingAudioCtx.createOscillator();
-    const gainNode = typingAudioCtx.createGain();
-    
-    // Very short, soft, high-pitched mechanical "tick"
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(600, typingAudioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, typingAudioCtx.currentTime + 0.03);
-    
-    // Very quiet (volume 0.03)
-    gainNode.gain.setValueAtTime(0.03, typingAudioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, typingAudioCtx.currentTime + 0.03);
-    
-    osc.connect(gainNode);
-    gainNode.connect(typingAudioCtx.destination);
-    osc.start();
-    osc.stop(typingAudioCtx.currentTime + 0.03);
-  } catch (e) {
-    // Silent fail if autoplay blocked
-  }
-};
+// Typing feedback now routes through the shared sound preference, so it is
+// silent unless the visitor asked for sound.
+const playTypingSound = () => playTick();
 
 // ─── SVG Icons ─────────────────────────────────────────────────────────────
 
@@ -64,12 +39,15 @@ const InstagramIcon = () => (
   </svg>
 );
 
-const SOCIALS = [
-  { name: 'GitHub',    handle: '@wasiqtanveer', url: 'https://github.com/wasiqtanveer', Icon: GithubIcon },
-  { name: 'LinkedIn',  handle: '@wasiqtanveer', url: 'https://www.linkedin.com/in/wasiq-tanveer', Icon: LinkedInIcon },
-  { name: 'Twitter/X', handle: '@wasiqtanveer', url: '#',                               Icon: TwitterIcon },
-  { name: 'Instagram', handle: '@wasiqtanveer', url: '#',                               Icon: InstagramIcon },
-];
+const SOCIAL_ICONS = {
+  GitHub: GithubIcon,
+  LinkedIn: LinkedInIcon,
+  'Twitter/X': TwitterIcon,
+  Instagram: InstagramIcon,
+};
+
+// Sourced from siteConfig so a dead profile can't be reintroduced here alone.
+const SOCIALS = SOCIAL_LINKS.map(s => ({ ...s, Icon: SOCIAL_ICONS[s.name] }));
 
 const SUBJECTS = [
   'Freelance Project',
@@ -81,67 +59,152 @@ const SUBJECTS = [
 
 // ─── Custom Select ──────────────────────────────────────────────────────────
 
-function CustomSelect({ value, onChange }) {
+/**
+ * Subject picker.
+ *
+ * Previously this looked like a select but announced as nothing: the trigger
+ * carried no combobox role or expanded state, and — worse — the five option
+ * buttons stayed in the tab order while the panel was collapsed to height:0, so
+ * tabbing past Subject walked a keyboard user through five invisible controls.
+ * It also had no Escape and no arrow keys.
+ *
+ * Now it implements the listbox pattern properly: roles and `aria-activedescendant`
+ * on the trigger, options that leave the tab order when closed (`inert` plus
+ * `visibility: hidden`, which is what actually removes them), Escape to dismiss,
+ * arrows/Home/End to move, Enter/Space to commit, and focus returned to the
+ * trigger on close.
+ */
+function CustomSelect({ value, onChange, labelId, describedBy, invalid }) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const dropRef = useRef();
   const btnRef  = useRef();
+  const listboxId = useId();
+
+  const close = useCallback((refocus = true) => {
+    setOpen(false);
+    setActiveIndex(-1);
+    if (refocus) btnRef.current?.focus();
+  }, []);
+
+  const commit = useCallback((subject) => {
+    onChange(subject);
+    close();
+  }, [onChange, close]);
 
   useEffect(() => {
+    if (!dropRef.current) return;
     if (open) {
       gsap.fromTo(dropRef.current,
         { height: 0, opacity: 0 },
         { height: 'auto', opacity: 1, duration: 0.3, ease: 'power2.out' }
       );
-    } else if (dropRef.current) {
+    } else {
       gsap.to(dropRef.current, { height: 0, opacity: 0, duration: 0.2, ease: 'power2.in' });
     }
   }, [open]);
 
-  // Close on outside click
+  // Close on outside interaction. Bound to pointerdown, not mousedown, so a
+  // touch outside the panel dismisses it too.
   useEffect(() => {
+    if (!open) return;
     const handler = (e) => {
       if (btnRef.current && !btnRef.current.contains(e.target) &&
           dropRef.current && !dropRef.current.contains(e.target)) {
-        setOpen(false);
+        close(false);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [open, close]);
+
+  const onKeyDown = (e) => {
+    switch (e.key) {
+      case 'Escape':
+        if (open) { e.preventDefault(); close(); }
+        break;
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        e.preventDefault();
+        if (!open) {
+          setOpen(true);
+          setActiveIndex(Math.max(0, SUBJECTS.indexOf(value)));
+          return;
+        }
+        const step = e.key === 'ArrowDown' ? 1 : -1;
+        setActiveIndex(i => (i + step + SUBJECTS.length) % SUBJECTS.length);
+        break;
+      }
+      case 'Home':
+        if (open) { e.preventDefault(); setActiveIndex(0); }
+        break;
+      case 'End':
+        if (open) { e.preventDefault(); setActiveIndex(SUBJECTS.length - 1); }
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (open && activeIndex >= 0) commit(SUBJECTS[activeIndex]);
+        else setOpen(o => !o);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="relative">
       <button
         ref={btnRef}
         type="button"
+        role="combobox"
+        aria-controls={listboxId}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-labelledby={labelId}
+        aria-describedby={describedBy}
+        aria-invalid={invalid || undefined}
+        aria-activedescendant={open && activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
         onClick={() => setOpen(o => !o)}
+        onKeyDown={onKeyDown}
         onMouseEnter={() => handleHover(true)}
         onMouseLeave={() => handleHover(false)}
-        className="w-full flex items-center justify-between pb-3.5 pt-3.5 border-b border-border text-left bg-transparent outline-none cursor-none group"
+        className={`w-full flex items-center justify-between pb-3.5 pt-3.5 border-b text-left bg-transparent group ${invalid ? 'border-[#ff3939]' : 'border-border'}`}
       >
-        <span className={`font-body text-[15px] transition-colors ${value ? 'text-text' : 'text-[#2e2e2e]'}`}>
+        <span className={`font-body text-[15px] transition-colors ${value ? 'text-text' : 'text-faint'}`}>
           {value || 'Select a subject…'}
         </span>
-        <span className={`font-mono text-[12px] text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>↓</span>
+        <span aria-hidden="true" className={`font-mono text-[12px] text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>↓</span>
         {/* Focus underline bar */}
-        <span className={`absolute bottom-0 left-0 h-[1px] bg-green transition-all duration-300 ${open ? 'w-full' : 'w-0'}`} />
+        <span aria-hidden="true" className={`absolute bottom-0 left-0 h-[1px] bg-green transition-all duration-300 ${open ? 'w-full' : 'w-0'}`} />
       </button>
       <div
         ref={dropRef}
+        id={listboxId}
+        role="listbox"
+        aria-labelledby={labelId}
+        // `inert` removes the whole subtree from the tab order and the
+        // accessibility tree; `visibility` is what actually stops a
+        // height:0-with-overflow-hidden child from staying focusable.
+        inert={open ? undefined : ''}
         className="absolute top-full left-0 right-0 z-50 overflow-hidden bg-surface border border-border"
-        style={{ height: 0, opacity: 0 }}
+        style={{ height: 0, opacity: 0, visibility: open ? 'visible' : 'hidden' }}
       >
-        {SUBJECTS.map(s => (
-          <button
+        {SUBJECTS.map((s, i) => (
+          <div
             key={s}
-            type="button"
-            onClick={() => { onChange(s); setOpen(false); }}
-            onMouseEnter={() => handleHover(true)}
+            id={`${listboxId}-opt-${i}`}
+            role="option"
+            aria-selected={value === s}
+            onClick={() => commit(s)}
+            onMouseEnter={() => { setActiveIndex(i); handleHover(true); }}
             onMouseLeave={() => handleHover(false)}
-            className="w-full text-left px-4 py-3 font-body text-[14px] text-muted hover:bg-[rgba(255,255,255,0.04)] hover:text-text transition-colors duration-150 cursor-none"
+            className={`w-full text-left px-4 py-3 font-body text-[14px] transition-colors duration-150
+              ${activeIndex === i ? 'bg-[rgba(255,255,255,0.04)] text-text' : 'text-muted'}
+              ${value === s ? 'text-green' : ''}`}
           >
             {s}
-          </button>
+          </div>
         ))}
       </div>
     </div>
@@ -172,7 +235,7 @@ function SocialRow({ social }) {
     const arrow  = el.querySelector('.social-arrow');
     gsap.to(border, { scaleY: 0, duration: 0.25, ease: 'power2.inOut', overwrite: 'auto' });
     gsap.to(name,   { color: '#EAEAE6', duration: 0.2, overwrite: 'auto' });
-    gsap.to(handle, { color: '#565656', duration: 0.2, overwrite: 'auto' });
+    gsap.to(handle, { color: '#8A8A85', duration: 0.2, overwrite: 'auto' });
     gsap.to(arrow,  { x: 0, y: 0, duration: 0.2, ease: 'power2.out', overwrite: 'auto' });
     handleHover(false);
   };
@@ -214,6 +277,16 @@ function splitChars(text, cls = 'text-text') {
 
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
+/** Per-field error text. Renders nothing when the field is valid. */
+function FieldError({ id, message }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="font-mono text-[10px] text-danger leading-[1.5] mt-1">
+      {message}
+    </p>
+  );
+}
+
 export default function Contact() {
   const container = useRef();
   const formRef   = useRef();
@@ -230,6 +303,25 @@ export default function Contact() {
   const [charCount, setCharCount] = useState(0);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
+
+  // Stable, collision-free ids so every label can actually point at its input.
+  const uid = useId();
+  const ids = {
+    name:    `${uid}-name`,
+    email:   `${uid}-email`,
+    subject: `${uid}-subject`,
+    message: `${uid}-message`,
+  };
+
+  /** Drops one field's error without disturbing the others. */
+  const clearError = useCallback((field) => {
+    setErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
 
   useScrollReveal(container);
 
@@ -285,13 +377,24 @@ export default function Contact() {
       onComplete: () => gsap.set(ref, { x: 0 }) });
   }, []);
 
+  /**
+   * Returns a message per invalid field, not a boolean.
+   *
+   * The old version set flags, and name/message failures rendered as a shake
+   * and a red border with no words at all — meaning conveyed by colour and
+   * motion alone (WCAG 1.4.1) with no error identification (3.3.1). A visitor
+   * who can't see the border, or who doesn't read red-as-error, was simply
+   * told "no" with no reason.
+   */
   const validate = useCallback(() => {
     const errs = {};
-    if (!name.trim()) errs.name = true;
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = true;
-    if (!message.trim()) errs.message = true;
+    if (!name.trim()) errs.name = "Add your name so I know who I'm replying to.";
+    if (!email.trim()) errs.email = 'Add an email address, or I have no way to reply.';
+    else if (!isValidEmail(email)) errs.email = 'That address is missing an @ or a domain — check the spelling.';
+    if (!subject) errs.subject = 'Pick what this is about.';
+    if (!message.trim()) errs.message = 'Tell me a bit about what you need.';
     return errs;
-  }, [name, email, message]);
+  }, [name, email, subject, message]);
 
   // ── Submit ───────────────────────────────────────────────────────────────
 
@@ -303,6 +406,10 @@ export default function Contact() {
       if (errs.name) shakeField(nameRef.current);
       if (errs.email) shakeField(emailRef.current);
       if (errs.message) shakeField(messageRef.current);
+      // Move focus to the first field that failed, so a keyboard or screen
+      // reader user lands on the problem instead of hunting for it.
+      const firstBad = errs.name ? nameRef : errs.email ? emailRef : errs.message ? messageRef : null;
+      firstBad?.current?.focus();
       return;
     }
 
@@ -318,33 +425,16 @@ export default function Contact() {
       // Celebration pulse
       gsap.fromTo('.submit-btn', { scale: 1 }, { scale: 1.05, duration: 0.15, yoyo: true, repeat: 1, ease: 'power2.out' });
       setName(''); setEmail(''); setSubject(''); setMessage(''); setCharCount(0);
-      setTimeout(() => setStatus('idle'), 3000);
+      // Success stays put. It used to revert to idle after 3s with the form
+      // already cleared, which left no evidence anything had been sent.
     } catch {
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      // Error stays until the visitor acts on it too — a failure that erases
+      // itself after 3 seconds is a failure the visitor never gets to read.
     }
   };
 
-  const inputBase = 'w-full bg-transparent border-b border-border pb-3.5 pt-3.5 font-body text-[15px] text-text outline-none placeholder:text-[#2e2e2e] transition-colors duration-200 relative';
-
-  const btnLabel = {
-    idle:    'Send a Message →',
-    loading: '[ SENDING... ]',
-    success: '[ MESSAGE SENT ✓ ]',
-    error:   '[ FAILED — TRY AGAIN ]',
-  };
-  const btnBg = {
-    idle:    '#39FF14',
-    loading: 'rgba(57,255,20,0.4)',
-    success: '#39FF14',
-    error:   '#ff3939',
-  };
-  const btnColor = {
-    idle:    '#0a0a0a',
-    loading: '#0a0a0a',
-    success: '#0a0a0a',
-    error:   '#ffffff',
-  };
+  const inputBase = 'w-full bg-transparent border-b border-border pb-3.5 pt-3.5 font-body text-[15px] text-text placeholder:text-faint transition-colors duration-200 relative';
 
   return (
     <section
@@ -382,103 +472,138 @@ export default function Contact() {
 
               {/* Name */}
               <div className="form-field field-name flex flex-col gap-2 relative z-10" style={{ opacity: 0 }}>
-                <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR NAME ]</label>
+                <label htmlFor={ids.name} className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR NAME ]</label>
                 <div className="relative group">
                   <input
                     ref={nameRef}
+                    id={ids.name}
                     name="from_name"
                     type="text"
+                    autoComplete="name"
                     placeholder="Wasiq Tanveer"
                     value={name}
+                    aria-invalid={errors.name ? true : undefined}
+                    aria-describedby={errors.name ? `${ids.name}-err` : undefined}
                     onChange={e => setName(e.target.value)}
                     onKeyDown={playTypingSound}
-                    onFocus={() => setErrors(er => ({ ...er, name: false }))}
+                    onFocus={() => clearError('name')}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
-                    className={`${inputBase} ${errors.name ? 'border-b-[#ff3939]' : 'focus:border-b-green'}`}
-                    style={{ borderColor: errors.name ? '#ff3939' : undefined }}
+                    className={`${inputBase} ${errors.name ? 'border-b-danger' : 'focus:border-b-green'}`}
                   />
                   {/* Focus green underline fill */}
-                  <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
+                  <span aria-hidden="true" className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
                 </div>
+                <FieldError id={`${ids.name}-err`} message={errors.name} />
               </div>
 
               {/* Email */}
               <div className="form-field field-email flex flex-col gap-2 relative z-10" style={{ opacity: 0 }}>
-                <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR EMAIL ]</label>
+                <label htmlFor={ids.email} className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR EMAIL ]</label>
                 <div className="relative group">
                   <input
                     ref={emailRef}
+                    id={ids.email}
                     name="from_email"
                     type="email"
+                    autoComplete="email"
                     placeholder="hello@example.com"
                     value={email}
-                    onChange={e => { setEmail(e.target.value); setErrors(p => ({...p, email: false})) }}
+                    aria-invalid={errors.email ? true : undefined}
+                    aria-describedby={errors.email ? `${ids.email}-err` : undefined}
+                    onChange={e => { setEmail(e.target.value); clearError('email'); }}
                     onKeyDown={playTypingSound}
-                    onFocus={() => setErrors(er => ({ ...er, email: false }))}
+                    onFocus={() => clearError('email')}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
-                    className={`${inputBase} ${errors.email ? 'border-b-[#ff3939]' : 'focus:border-b-green'}`}
-                    style={{ borderColor: errors.email ? '#ff3939' : undefined }}
+                    className={`${inputBase} ${errors.email ? 'border-b-danger' : 'focus:border-b-green'}`}
                   />
-                  <span className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
+                  <span aria-hidden="true" className="absolute bottom-0 left-0 h-[1px] w-0 bg-green group-focus-within:w-full transition-all duration-300 ease-out" />
                 </div>
-                {errors.email && <span style={{fontSize:'10px', color:'#ff3939', fontFamily:'JetBrains Mono', marginTop:'4px', display:'block'}}>[ invalid email format ]</span>}
+                <FieldError id={`${ids.email}-err`} message={errors.email} />
               </div>
 
               {/* Subject */}
               {/* Added relative z-20 so the expanded dropdown sits firmly over the textarea below it */}
               <div className="form-field flex flex-col gap-2 relative z-20" style={{ opacity: 0 }}>
-                <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ WHAT IS THIS ABOUT ]</label>
+                <span id={ids.subject} className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ WHAT IS THIS ABOUT ]</span>
                 <input type="hidden" name="subject" value={subject} />
-                <CustomSelect value={subject} onChange={setSubject} />
+                <CustomSelect
+                  value={subject}
+                  onChange={s => { setSubject(s); clearError('subject'); }}
+                  labelId={ids.subject}
+                  describedBy={errors.subject ? `${ids.subject}-err` : undefined}
+                  invalid={Boolean(errors.subject)}
+                />
+                <FieldError id={`${ids.subject}-err`} message={errors.subject} />
               </div>
 
               {/* Message */}
               <div className="form-field field-message flex flex-col gap-2 relative z-10" style={{ opacity: 0 }}>
-                <label className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR MESSAGE ]</label>
+                <label htmlFor={ids.message} className="font-mono text-[10px] text-muted uppercase tracking-[0.2em]">[ YOUR MESSAGE ]</label>
                 <div className="relative group">
                   <textarea
                     ref={messageRef}
+                    id={ids.message}
                     name="message"
                     placeholder="Tell me about your project..."
                     value={message}
                     rows={6}
                     maxLength={500}
+                    aria-invalid={errors.message ? true : undefined}
+                    aria-describedby={`${ids.message}-count${errors.message ? ` ${ids.message}-err` : ''}`}
                     onChange={e => { setMessage(e.target.value); setCharCount(e.target.value.length); }}
                     onKeyDown={playTypingSound}
-                    onFocus={() => setErrors(er => ({ ...er, message: false }))}
+                    onFocus={() => clearError('message')}
                     onMouseEnter={() => handleHover(true)}
                     onMouseLeave={() => handleHover(false)}
-                    className={`w-full bg-transparent border font-body text-[15px] text-text p-4 outline-none placeholder:text-[#2e2e2e] resize-vertical min-h-[140px] transition-all duration-200
-                      ${errors.message ? 'border-[#ff3939]' : 'border-border focus:border-[rgba(57,255,20,0.3)] focus:bg-[rgba(57,255,20,0.02)]'}`}
-                    style={{ borderColor: errors.message ? '#ff3939' : undefined }}
+                    className={`w-full bg-transparent border font-body text-[15px] text-text p-4 placeholder:text-faint resize-vertical min-h-[140px] transition-all duration-200
+                      ${errors.message ? 'border-danger' : 'border-border focus:border-[rgba(57,255,20,0.3)] focus:bg-[rgba(57,255,20,0.02)]'}`}
                   />
-                  <span className="absolute bottom-3 right-3 font-mono text-[10px] text-[#2e2e2e] pointer-events-none">
+                  <span id={`${ids.message}-count`} className="absolute bottom-3 right-3 font-mono text-[10px] text-faint pointer-events-none">
                     {charCount} / 500
                   </span>
                 </div>
+                <FieldError id={`${ids.message}-err`} message={errors.message} />
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
                 disabled={status === 'loading' || status === 'success'}
-                className="submit-btn w-full py-[18px] font-hero font-bold text-[13px] uppercase tracking-wider transition-all duration-200 cursor-none outline-none disabled:opacity-70"
+                className="submit-btn w-full py-[18px] font-hero font-bold text-[13px] uppercase tracking-wider transition-all duration-200 disabled:opacity-70"
                 style={{
-                  background: status === 'error' ? '#ff3939' : '#39FF14',
+                  background: status === 'error' ? '#ff5c5c' : '#39FF14',
                   opacity: status === 'loading' ? 0.5 : 1,
                   cursor: status === 'loading' ? 'not-allowed' : 'pointer',
-                  color: status === 'error' ? '#ffffff' : '#0a0a0a'
+                  color: '#0a0a0a'
                 }}
                 onMouseEnter={() => handleHover(true)}
                 onMouseLeave={() => handleHover(false)}
               >
                 {status === 'idle' && 'Send a Message →'}
-                {status === 'loading' && <span className="inline-flex items-center gap-2">[ SENDING... ]<span className="inline-block w-[2px] h-[1em] bg-current align-middle animate-[blink_0.75s_step-end_infinite]" /></span>}
+                {status === 'loading' && <span className="inline-flex items-center gap-2">[ SENDING... ]<span aria-hidden="true" className="inline-block w-[2px] h-[1em] bg-current align-middle animate-[blink_0.75s_step-end_infinite]" /></span>}
                 {status === 'success' && '[ MESSAGE SENT ✓ ]'}
                 {status === 'error' && '[ FAILED — TRY AGAIN ]'}
               </button>
+
+              {/* Status region — the loading/success/error transitions were
+                  previously visible only as a change of button label, which is
+                  silent to assistive tech. This announces them, and carries the
+                  fallback address so a failed send is never a dead end. */}
+              <div role="status" aria-live="polite" className="min-h-[1.25rem]">
+                {status === 'success' && (
+                  <p className="font-mono text-[11px] text-green">
+                    Message sent. I&apos;ll reply within 24 hours.
+                  </p>
+                )}
+                {status === 'error' && (
+                  <p className="font-mono text-[11px] text-danger">
+                    That didn&apos;t send — the mail service didn&apos;t respond. Try again, or email me directly at{' '}
+                    <a href={CONTACT_MAILTO} className="underline underline-offset-2 text-danger">{CONTACT_EMAIL}</a>.
+                  </p>
+                )}
+              </div>
 
             </form>
           </div>
@@ -498,16 +623,36 @@ export default function Contact() {
               <span className="font-mono text-[10px] text-muted">Open to work</span>
             </div>
 
-            {/* Info Rows — hidden on mobile */}
-            <div className="hidden md:flex flex-col border-t border-border">
+            {/* Info rows.
+                These used to be `hidden md:flex`, which meant the response
+                time, the timezone, and — critically — the email address did
+                not exist anywhere in the mobile DOM. A phone visitor who
+                didn't want to use the form had no way to reach anyone. They
+                stack on narrow screens now instead of disappearing. */}
+            <div className="flex flex-col border-t border-border">
               {[
-                { label: 'RESPONSE TIME',      value: 'Within 24 hours'  },
-                { label: 'TIMEZONE',           value: 'PKT — UTC+5'      },
-                { label: 'PREFERRED CONTACT',  value: 'mwasiqt@gmail.com' },
+                { label: 'RESPONSE TIME',     value: RESPONSE_TIME },
+                { label: 'TIMEZONE',          value: TIMEZONE },
+                { label: 'PREFERRED CONTACT', value: CONTACT_EMAIL, href: CONTACT_MAILTO },
               ].map(row => (
-                <div key={row.label} className="contact-info-row flex items-center justify-between py-[18px] border-b border-border" style={{ opacity: 0 }}>
+                <div
+                  key={row.label}
+                  className="contact-info-row flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between py-[18px] border-b border-border"
+                  style={{ opacity: 0 }}
+                >
                   <span className="font-mono text-[10px] text-muted tracking-[0.15em] uppercase">{row.label}</span>
-                  <span className="font-body text-[14px] text-text">{row.value}</span>
+                  {row.href ? (
+                    <a
+                      href={row.href}
+                      onMouseEnter={() => handleHover(true)}
+                      onMouseLeave={() => handleHover(false)}
+                      className="font-body text-[14px] text-text break-all underline underline-offset-4 decoration-border hover:decoration-green transition-colors"
+                    >
+                      {row.value}
+                    </a>
+                  ) : (
+                    <span className="font-body text-[14px] text-text">{row.value}</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -523,7 +668,7 @@ export default function Contact() {
             </div>
 
             {/* Personal Note */}
-            <blockquote className="mt-7 pl-4 border-l-2 border-[rgba(57,255,20,0.2)]">
+            <blockquote className="mt-7 pl-4 border-l border-[rgba(57,255,20,0.25)]">
               <p className="font-body text-[14px] italic text-muted leading-[1.7]">
                 "I reply to every message personally — no bots, no templates."
               </p>

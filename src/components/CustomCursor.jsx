@@ -1,24 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import { playTick } from '../hooks/useSound';
 
 const isTouch = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-
-// Cache AudioContext to prevent severe memory leaks
-let globalAudioCtx = null;
-const getAudioCtx = () => {
-  if (typeof window === 'undefined') return null;
-  if (!globalAudioCtx) {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-      globalAudioCtx = new AudioContext();
-    }
-  }
-  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
-    globalAudioCtx.resume();
-  }
-  return globalAudioCtx;
-};
 
 export default function CustomCursor() {
   const dotRef  = useRef(null);
@@ -27,21 +12,8 @@ export default function CustomCursor() {
   // ── Click audio + ring pulse ──────────────────────────────────────────
   useEffect(() => {
     const onClick = () => {
-      try {
-        const ctx = getAudioCtx();
-        if (!ctx) return;
-        const osc  = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.05);
-      } catch { /* autoplay blocked */ }
+      // Routed through the shared preference — silent unless sound is on.
+      playTick({ from: 600, to: 120, gain: 0.12, duration: 0.05 });
 
       // Quick pulse on ring — GSAP handles all transforms
       if (ringRef.current) {
@@ -70,11 +42,6 @@ export default function CustomCursor() {
       xPercent: -50,
       yPercent: -50,
     });
-
-    let ringX  = window.innerWidth  / 2;
-    let ringY  = window.innerHeight / 2;
-    let mouseX = ringX;
-    let mouseY = ringY;
 
     // Create hardware-accelerated quickTo instances
     const xToDot = gsap.quickTo(dot, "x", { duration: 0.05, ease: "power3" });

@@ -3,15 +3,10 @@ import React, { useRef, useEffect, useState, lazy, Suspense } from 'react';
 // Lazy-load the WebGL scene so three.js doesn't block initial paint.
 const Scene3D = lazy(() => import('./Scene3D'));
 
-// ─── FLICKER DEBUG SWITCHES ─────────────────────────────────────────────────
-// We're isolating the flicker by elimination. Right now EVERYTHING is OFF except
-// the solid dark base. Confirm the page is flicker-free, then flip ONE flag to
-// true, rebuild, and look again. The first flag that brings the flicker back is
-// the culprit. Toggle order is recommended: SCENE_3D → GRAIN → SCRATCHES.
-const ENABLE_3D       = true; // the WebGL scene (particles + wireframes)
-const ENABLE_GRAIN    = true; // animated CSS film-grain layer
-const ENABLE_SCRATCHES = true; // 2D canvas scratch lines (redraw every 8s)
-// ────────────────────────────────────────────────────────────────────────────
+// The background is three stacked layers over a solid dark base: the WebGL
+// scene (particles + wireframes), an animated CSS film-grain layer, and a 2D
+// canvas of scratch lines that redraws every 8s. They were behind debug flags
+// during a flicker bisect; the bisect is over and all three ship.
 
 export default function Background() {
   const scratchCanvasRef = useRef(null);
@@ -20,7 +15,6 @@ export default function Background() {
   // Defer the WebGL scene until the browser is idle so it never competes
   // with the preloader / hero entrance animation.
   useEffect(() => {
-    if (!ENABLE_3D) return;
     const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 1200));
     const id = ric(() => setShow3D(true));
     return () => {
@@ -30,7 +24,6 @@ export default function Background() {
   }, []);
 
   useEffect(() => {
-    if (!ENABLE_SCRATCHES) return;
     const isMobile = window.matchMedia('(pointer: coarse)').matches;
     const scratchCanvas = scratchCanvasRef.current;
     if (!scratchCanvas) return;
@@ -86,7 +79,7 @@ export default function Background() {
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ zIndex: 0, backgroundColor: '#0b0b0b' }}
     >
-      {ENABLE_3D && show3D && (
+      {show3D && (
         <Suspense fallback={null}>
           <Scene3D />
         </Suspense>
@@ -107,13 +100,9 @@ export default function Background() {
         }}
       />
 
-      {ENABLE_GRAIN && (
-        <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
-      )}
+      <div className="absolute inset-0 w-full h-full css-grain" style={{ zIndex: 2 }} />
 
-      {ENABLE_SCRATCHES && (
-        <canvas ref={scratchCanvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
-      )}
+      <canvas ref={scratchCanvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full" style={{ zIndex: 3 }} />
 
       {/* Charcoal vignette — pulls the eye to centre, deepens the volcanic black */}
       <div

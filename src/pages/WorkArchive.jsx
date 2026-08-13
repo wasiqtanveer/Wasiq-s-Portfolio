@@ -1,37 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import gsap from 'gsap';
+import { playTick } from '../hooks/useSound';
 import { useGSAP } from '@gsap/react';
 
 const handleHover = (hovered) =>
   window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
 
-// Cached AudioContext (reused across hovers to avoid leaks)
-let globalAudioCtx = null;
-const playTick = () => {
-  if (typeof window === 'undefined') return;
-  try {
-    if (!globalAudioCtx) {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      globalAudioCtx = new AudioContext();
-    }
-    const ctx = globalAudioCtx;
-    if (ctx.state === 'suspended') ctx.resume();
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    // Short, dry click — high freq, very fast decay = a crisp "tick"
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(1800, ctx.currentTime);
-    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.025);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.03);
-  } catch { /* autoplay blocked until first user gesture */ }
-};
+// Sound routes through the shared preference (default off, one toggle for the
+// whole site) rather than each component owning its own AudioContext.
+const rowTick = () => playTick({ from: 1800, to: 900, gain: 0.05, duration: 0.03 });
 
 export default function WorkArchive() {
   // Per-route SEO: unique title while on /work, restored on unmount
@@ -51,19 +29,35 @@ export default function WorkArchive() {
   const [openRow, setOpenRow] = useState(null);
 
   const toggleRow = (i) => {
-    playTick();
+    rowTick();
     setOpenRow((cur) => (cur === i ? null : i));
   };
 
   useGSAP(() => {
-    gsap.fromTo('.archive-row',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, stagger: 0.05, ease: 'power3.out', delay: 0.2 }
-    );
-    gsap.fromTo('.archive-title',
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
-    );
+    // One timeline, no leading delay. Two separate tweens with a `delay: 0.2`
+    // on the rows meant the page sat visibly empty for 200ms after mount —
+    // stacked on top of the route swap it read as the entrance stalling before
+    // it started. Sequencing off a single timeline keeps the title and rows in
+    // one continuous motion, and clearProps drops the will-change hint the
+    // moment each element lands so the compositor isn't holding ten promoted
+    // layers for the rest of the visit.
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reduce) {
+      gsap.set(['.archive-title', '.archive-row'], { opacity: 1, y: 0 });
+    } else {
+      gsap.timeline({ defaults: { ease: 'power3.out', force3D: true } })
+        .fromTo('.archive-title',
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.55, stagger: 0.06, clearProps: 'transform' },
+          0
+        )
+        .fromTo('.archive-row',
+          { opacity: 0, y: 18 },
+          { opacity: 1, y: 0, duration: 0.5, stagger: 0.04, clearProps: 'transform' },
+          0.12
+        );
+    }
 
     // Snappy quickTo movers for the floating preview. Shorter duration + a
     // tight ease so the card tracks the cursor almost 1:1 but still glides.
@@ -151,7 +145,10 @@ export default function WorkArchive() {
 
   const handleRowEnter = (project) => {
     handleHover(true);
-    playTick();
+    // No tick here. Sweeping a mouse down nine rows fired nine of them in a
+    // row — machine-gun clicking on the site's best page, for a gesture the
+    // visitor never committed to. Audio is reserved for deliberate actions
+    // (opening a row), and even then only if sound is switched on.
     if (!project.image) return;
     setActiveImage(project.image);
     // Snap the preview to the cursor immediately so it never flies in from a
@@ -231,8 +228,14 @@ export default function WorkArchive() {
         {/* Table Body */}
         {projects.map((p, i) => {
           const isOpen = openRow === i;
+          // The row's transition list is explicit rather than `transition-all`:
+          // the entrance timeline animates opacity + transform on this same
+          // element, and `transition-all` made the browser re-transition every
+          // inline value GSAP wrote — so the row trailed ~500ms behind its own
+          // tween and kept drifting after it had finished. Only the open/hover
+          // paint properties get a CSS transition.
           return (
-          <div className={`archive-row border-b border-border transition-all duration-500 ${isOpen ? 'bg-[rgba(57,255,20,0.035)] border-l-2 border-l-green shadow-[inset_0_0_40px_-20px_rgba(57,255,20,0.4)]' : 'border-l-2 border-l-transparent'}`} key={i}>
+          <div className={`archive-row border-b border-border transition-[background-color,border-color,box-shadow] duration-500 ${isOpen ? 'bg-[rgba(57,255,20,0.035)] border-l-2 border-l-green shadow-[inset_0_0_40px_-20px_rgba(57,255,20,0.4)]' : 'border-l-2 border-l-transparent'}`} key={i}>
             {/* Original row — now the click target for expand */}
             <div
               role="button"
@@ -244,19 +247,23 @@ export default function WorkArchive() {
               onMouseEnter={() => handleRowEnter(p)}
               onMouseLeave={handleRowLeave}
             >
-              <div className={`font-mono text-[12px] md:mt-1 transition-colors ${isOpen ? 'text-green' : 'text-[#565656]'}`}>{p.year}</div>
+              <div className={`font-mono text-[12px] md:mt-1 transition-colors ${isOpen ? 'text-green' : 'text-muted'}`}>{p.year}</div>
               <div className={`font-hero font-bold text-[18px] md:text-[20px] transition-colors flex items-baseline gap-3 ${isOpen ? 'text-green' : 'text-text group-hover:text-green'}`}>
                 {p.title}
-                {/* Subtle hint — fades in on hover, hides once open */}
-                <span className={`font-mono text-[10px] tracking-widest uppercase text-green/50 transition-opacity duration-300 ${isOpen ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
-                  click to expand
+                {/* Expand affordance. This used to be hover-only, which meant
+                    that on touch it never appeared at all and nine expandable
+                    rows read as a static table. It is now always visible on
+                    small screens and hover-revealed from md up, where a
+                    pointer exists to discover it. */}
+                <span className={`font-mono text-[10px] tracking-widest uppercase text-green/50 transition-opacity duration-300 ${isOpen ? 'opacity-0' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}>
+                  {isOpen ? '' : 'tap to expand'}
                 </span>
               </div>
               <div className="font-body text-[14px] text-muted md:mt-1">{p.type}</div>
               <div className="font-mono text-[11px] text-muted flex items-center md:items-start pt-1 gap-x-2 flex-wrap">
                 {p.tech.map((t, idx) => (
                   <span key={t}>
-                    {t}{idx < p.tech.length - 1 && <span className="text-[#2e2e2e] ml-2">·</span>}
+                    {t}{idx < p.tech.length - 1 && <span className="text-faint ml-2">·</span>}
                   </span>
                 ))}
               </div>
@@ -281,7 +288,7 @@ export default function WorkArchive() {
               style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
             >
               <div className="overflow-hidden">
-                <div className={`md:pl-[124px] md:pr-6 pb-10 transition-all duration-500 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}>
+                <div className={`md:pl-[124px] md:pr-6 pb-10 transition-[opacity,transform] duration-500 ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-1'}`}>
                   <div className="border-l border-[rgba(57,255,20,0.25)] pl-6">
                     <p className="font-body text-[14px] text-text/75 leading-[1.85] max-w-[620px] mb-6">{p.detail}</p>
                     {p.highlights && (

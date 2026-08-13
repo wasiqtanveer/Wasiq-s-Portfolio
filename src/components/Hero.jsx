@@ -5,20 +5,16 @@ import Navigation from './Navigation';
 import Marquee from './Marquee';
 import photoAsset from '../assets/unnamed - Edited.png';
 
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export default function Hero({ isReady }) {
   const container = useRef(null);
   const photoCard = useRef(null);
   const imgRef = useRef(null);
   const circleRef = useRef(null);   // SVG spinner
   const circleTweenRef = useRef(null); // persistent rotation tween
-  const hoverTargets = useRef([]);
   const hasInitialized = useRef(false);
-
-  const addToHover = (el) => {
-    if (el && !hoverTargets.current.includes(el)) {
-      hoverTargets.current.push(el);
-    }
-  };
 
   const handleHover = (hovered) => {
     window.dispatchEvent(new CustomEvent('cursor-hover', { detail: { hovered } }));
@@ -98,9 +94,12 @@ export default function Hero({ isReady }) {
     };
   }, [isReady]);
 
-  // Persistent GSAP rotation for the Hire Me circle
+  // Persistent GSAP rotation for the Hire Me circle.
+  // Guarded: this is perpetual decorative motion, and it was one of three
+  // animations that kept running after a visitor explicitly asked for reduced
+  // motion while six other systems on the page honoured the request.
   useEffect(() => {
-    if (!circleRef.current) return;
+    if (!circleRef.current || prefersReducedMotion()) return;
     // Fast default speed — 1 full rotation every 6s
     circleTweenRef.current = gsap.to(circleRef.current, {
       rotation: 360,
@@ -142,9 +141,17 @@ export default function Hero({ isReady }) {
     ];
     const glyphs = '!<>-_\\/[]{}—=+*^?#________';
     let roleIdx = 0;
-    
+
     const typeEl = document.getElementById('typewriter-text');
     if (!typeEl) return;
+
+    // Reduced motion: no scramble, no 4s cycle. Print one role and stop —
+    // a perpetual character-level shuffle is exactly the kind of motion the
+    // preference exists to switch off.
+    if (prefersReducedMotion()) {
+      typeEl.textContent = roles[1];
+      return;
+    }
 
     const scramble = (newText) => {
       const isInitial = !hasInitialized.current;
@@ -172,7 +179,6 @@ export default function Hero({ isReady }) {
         const targetChar = newText[i] || "";
         // Increased stagger range for a more visible, drawn-out effect
         const delay = isInitial ? Math.random() * 0.9 : Math.random() * 0.7;
-        const duration = isInitial ? (0.6 + Math.random() * 0.6) : 0.5;
 
         // Smoother, more persistent scramble
         const interval = setInterval(() => {
@@ -250,14 +256,21 @@ export default function Hero({ isReady }) {
           <span className="block overflow-visible"><span className="inline-block name-part-2 opacity-0">Tanveer</span></span>
         </h1>
 
+        {/* The scrambling role line is decorative motion over a list of roles.
+            The animated element ships empty and fills with random glyphs from
+            the scramble alphabet, so assistive tech previously announced live
+            garbage on a 4s loop and never the actual job title. The visible
+            span is now hidden from AT, and a static equivalent carries the
+            real text — which is also what shows if JS never runs. */}
         <p className="mt-8 font-body font-light text-[clamp(16px,1.4vw,20px)] text-muted opacity-0 flex items-center gap-2 min-h-[28px]" id="hero-role">
-          <span className="text-text font-light" id="typewriter-text"></span>
+          <span className="sr-only">Full Stack Developer and Automation Engineer</span>
+          <span aria-hidden="true" className="text-text font-light" id="typewriter-text"></span>
         </p>
       </div>
 
       <div 
         ref={photoCard}
-        className="opacity-0 relative md:absolute md:right-[clamp(40px,8vw,120px)] md:top-1/2 -rotate-4 md:-translate-y-[63%] md:translate-y-[-80px] w-[60vw] max-w-[220px] md:w-[clamp(180px,22vw,300px)] aspect-[3/4] bg-surface border border-border rounded-sm shadow-card z-20 overflow-hidden mx-auto mt-10 md:mt-0"
+        className="opacity-0 relative md:absolute md:right-[clamp(40px,8vw,120px)] md:top-1/2 -rotate-4 md:-translate-y-[63%] w-[60vw] max-w-[220px] md:w-[clamp(180px,22vw,300px)] aspect-[3/4] bg-surface border border-border rounded-sm shadow-card z-20 overflow-hidden mx-auto mt-10 md:mt-0"
         id="photo-card"
         onMouseEnter={() => handleHover(true)}
         onMouseLeave={() => handleHover(false)}
@@ -278,14 +291,22 @@ export default function Hero({ isReady }) {
         </div>
       </div>
 
-      <div
+      {/* An anchor, not a click-handler div: it opened LinkedIn but could not
+          be reached, focused, or activated from the keyboard, and announced as
+          nothing. */}
+      <a
         id="circular-text-wrap"
-        className="absolute bottom-[68px] right-6 w-[100px] h-[100px] md:bottom-[100px] md:right-12 md:w-[130px] md:h-[130px] z-30 opacity-0 will-change-transform cursor-pointer"
-        onClick={() => window.open('https://www.linkedin.com/in/wasiq-tanveer', '_blank', 'noopener,noreferrer')}
+        href="https://www.linkedin.com/in/wasiq-tanveer"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open to work — view LinkedIn profile"
+        className="absolute bottom-[68px] right-6 w-[100px] h-[100px] md:bottom-[100px] md:right-12 md:w-[130px] md:h-[130px] z-30 opacity-0 will-change-transform cursor-pointer block"
         onMouseEnter={() => { handleCircleEnter(); handleHover(true); }}
         onMouseLeave={() => { handleCircleLeave(); handleHover(false); }}
+        onFocus={handleCircleEnter}
+        onBlur={handleCircleLeave}
       >
-        <svg ref={circleRef} className="w-full h-full" viewBox="0 0 130 130">
+        <svg ref={circleRef} aria-hidden="true" className="w-full h-full" viewBox="0 0 130 130">
           <defs>
             <path id="circle-path" d="M 65,65 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0" />
           </defs>
@@ -295,10 +316,10 @@ export default function Hero({ isReady }) {
             </textPath>
           </text>
         </svg>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center border border-border rounded-full bg-bg">
+        <div aria-hidden="true" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center border border-border rounded-full bg-bg">
           <span className="text-green text-sm leading-none">→</span>
         </div>
-      </div>
+      </a>
 
       <div id="marquee-wrapper" className="opacity-0 w-full mt-auto">
         <Marquee />

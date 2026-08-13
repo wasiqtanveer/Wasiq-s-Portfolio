@@ -26,4 +26,13 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // `api/` runs on the server (Vercel functions), not in the browser. Linting
+    // it under browser globals reported every `process.env` read as an
+    // undefined variable — four errors that were never real.
+    files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

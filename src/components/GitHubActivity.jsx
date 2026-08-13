@@ -48,11 +48,14 @@ const FILTERS = [
 ];
 
 // ─── Skeleton Grid (same dimensions as real grid — no layout shift) ────────
+// Both grids flow by column with auto-sized columns rather than a hard
+// `repeat(52, …)`. A year is 365 or 366 days — 52 columns holds only 364, so
+// the last day or two silently overflowed the declared track.
 
 function GridSkeleton() {
   return (
-    <div className="grid gap-[3px]" style={{ gridTemplateColumns: 'repeat(52, 10px)', gridTemplateRows: 'repeat(7, 10px)', width: 'max-content' }}>
-      {Array.from({ length: 364 }).map((_, i) => (
+    <div className="grid gap-[3px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(7, 10px)', gridAutoColumns: '10px', width: 'max-content' }}>
+      {Array.from({ length: 371 }).map((_, i) => (
         <div key={i} className="w-[10px] h-[10px]" style={{ background: i % 3 === 0 ? '#181818' : '#121212' }} />
       ))}
     </div>
@@ -100,22 +103,44 @@ export default function GitHubActivity() {
 
   // ── Data fetching ──────────────────────────────────────────────────────
 
+  // Tracks the request currently in flight so a newer one can cancel it.
+  // Without this, clicking through the year filters quickly fired a request per
+  // click with no abort — the responses could resolve out of order and paint a
+  // year the visitor was no longer looking at.
+  const inFlight = useRef(null);
+
   const fetchData = useCallback(async (y) => {
+    inFlight.current?.abort();
+    const controller = new AbortController();
+    inFlight.current = controller;
+
     setLoading(true);
     if (dataRef.current) gsap.to(dataRef.current, { opacity: 0.5, duration: 0.25 });
 
     try {
-      const res = await fetch(`https://github-contributions-api.jogruber.de/v4/wasiqtanveer?y=${y}`);
+      const res = await fetch(
+        `https://github-contributions-api.jogruber.de/v4/wasiqtanveer?y=${y}`,
+        { signal: controller.signal }
+      );
+      if (!res.ok) throw new Error(`GitHub activity API returned ${res.status}`);
       const data = await res.json();
       setContributions(data.contributions || []);
       setError(false);
-    } catch {
+    } catch (err) {
+      // A superseded request is not a failure — leave the UI to the newer one.
+      if (err?.name === 'AbortError') return;
       setError(true);
     } finally {
-      setLoading(false);
-      if (dataRef.current) gsap.to(dataRef.current, { opacity: 1, duration: 0.35 });
+      if (inFlight.current === controller) {
+        inFlight.current = null;
+        setLoading(false);
+        if (dataRef.current) gsap.to(dataRef.current, { opacity: 1, duration: 0.35 });
+      }
     }
   }, []);
+
+  // Cancel any outstanding request if the visitor navigates away mid-flight.
+  useEffect(() => () => inFlight.current?.abort(), []);
 
   // Filter change — only fetch if section already loaded
   const handleFilter = useCallback((y) => {
@@ -222,7 +247,7 @@ export default function GitHubActivity() {
             <button
               key={f.y}
               onClick={() => handleFilter(f.y)}
-              className={`font-mono text-[10px] uppercase tracking-widest px-4 py-1.5 border transition-all duration-200 cursor-none outline-none ${
+              className={`font-mono text-[10px] uppercase tracking-widest px-4 py-1.5 border transition-all duration-200 cursor-none ${
                 activeFilter === f.y
                   ? 'bg-[rgba(57,255,20,0.08)] border-[rgba(57,255,20,0.3)] text-green'
                   : 'bg-surface border-border text-muted hover:border-[rgba(57,255,20,0.2)] hover:text-text'
@@ -259,7 +284,7 @@ export default function GitHubActivity() {
               )}
               <div
                 className="grid gap-[3px]"
-                style={{ gridTemplateColumns: 'repeat(52, 10px)', gridTemplateRows: 'repeat(7, 10px)', width: 'max-content' }}
+                style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(7, 10px)', gridAutoColumns: '10px', width: 'max-content' }}
                 onMouseOver={handleGridMouseOver}
                 onMouseMove={handleGridMouseMove}
                 onMouseLeave={() => setTooltip(null)}

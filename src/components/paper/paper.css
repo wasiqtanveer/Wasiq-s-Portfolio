@@ -1,0 +1,483 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PAPER LAB — torn paper + stop-motion motion language
+   ═══════════════════════════════════════════════════════════════════════════
+
+   The whole look rests on one rule: NOTHING moves on a smooth curve. Every
+   animation here either flips between discrete frames or uses a stepped
+   timing function, so motion lands on a beat instead of gliding. That is what
+   sells "shot on a rostrum camera" instead of "CSS transition".
+
+   Convenient side effect: stepped motion writes far fewer style changes per
+   second than a 60fps tween, so this section is cheaper than the smooth one
+   it sits next to.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── Palette: newsprint, near-monochrome, one ink ────────────────────────────
+   Almost the whole page is paper, graphite and warm black. A single earth-red
+   does all the accent work, and one quiet slate carries structure. Nothing is
+   saturated enough to shout, which is the point: on a hand-made surface the
+   texture and the type are the subject, and a bright accent competes with both
+   instead of pointing at anything.
+
+   Warm throughout, deliberately. Cool greys and pure #000 fight paper — black
+   at full strength on a warm sheet reads as a hole punched in the page rather
+   than as ink sitting on top of it.
+
+   Everything on this page derives from these tokens, so re-skinning the whole
+   direction means editing this block and nothing else. */
+:root {
+  /* Stock. Four tones, not one — a collage only reads as layered if the
+     sheets disagree slightly; identical whites flatten into one surface. */
+  --paper-hi:     #F7F2E7;  /* freshest sheet, sits on top */
+  --paper:        #EDE7D9;  /* standard stock */
+  --paper-2:      #DCD4C2;  /* backing board — everything else lies on this */
+  --paper-3:      #C5BBA6;  /* shaded fold face */
+
+  /* Ink — also the ground the sheets sit on, and the torn-edge mask colour. */
+  --ink:          #15110D;
+  --ink-soft:     #38312A;
+  --grey:         #7E7465;
+  --grey-light:   #ABA091;
+
+  /* The accent, in three strengths. One hue, but a colour that is legible as
+     type on cream is too dark to read as type on near-black, and neither
+     version is right for a solid block — so each job gets its own value
+     rather than one compromise value doing all three badly. */
+  --spot:         #BC4526;  /* solid blocks, with paper reversed out of them */
+  --spot-ink:     #9E3417;  /* the accent AS TYPE or a border, on paper */
+  --spot-lift:    #E9764B;  /* the accent AS TYPE, on the dark ground */
+
+  /* Structure ink. Rules, grids, registration, bullets — the marks that
+     organise the page rather than draw the eye. Quiet on purpose: if this were
+     a second accent the composition would have two centres and no hierarchy. */
+  --spot-2:       #2C3A34;
+  --spot-2-soft:  #4C5F55;
+}
+
+/* ── Host-page cursor swap ───────────────────────────────────────────────────
+   The app shell's dot-and-crosshair cursor is replaced wholesale on this route
+   by <PaperCursor>. The shell component stays MOUNTED — it owns the click
+   sound, and keeping it avoids forking a shared component — it is only hidden
+   visually. PaperLab sets `data-paper` on <body> while mounted and clears it on
+   unmount, so nothing leaks to any other route. */
+body[data-paper] #cursor-dot,
+body[data-paper] #cursor-ring {
+  display: none !important;
+}
+
+.paper-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100000;   /* above the shell's own cursor layer (99999) */
+  pointer-events: none;
+  will-change: transform;
+}
+.paper-cursor-svg {
+  display: block;
+  /* Reads as a cut-out lying ON the page rather than drawn into it. Offset
+     down-right to match the light the sheets are lit from. */
+  filter: drop-shadow(1.5px 2.5px 1.5px rgba(21, 17, 13, 0.45));
+}
+/* The boil is a paint on a ~20×28 box — small enough that re-cutting the
+   outline three times a second is free, unlike most animated filters. */
+@media (prefers-reduced-motion: reduce) {
+  .paper-cursor-svg { filter: none; }
+}
+
+/* ── The film-frame beat ─────────────────────────────────────────────────────
+   12fps. Every looping animation in this section is a multiple of this so the
+   whole composition breathes on the same beat rather than drifting apart. */
+.paper-lab { --beat: 0.3333s; }
+
+/* ── Flipbook: 3-frame boil ──────────────────────────────────────────────────
+   Three stacked copies of a shape, each visible for exactly one third of the
+   cycle. Hard opacity switches (the 0.01% gaps) mean no interpolation — the
+   frame cuts. ~9 opacity flips per second total, which is nothing. */
+@keyframes paper-boil-a {
+  0%,      33.32%  { opacity: 1; }
+  33.33%, 100%     { opacity: 0; }
+}
+@keyframes paper-boil-b {
+  0%,      33.32%  { opacity: 0; }
+  33.33%, 66.65%   { opacity: 1; }
+  66.66%, 100%     { opacity: 0; }
+}
+@keyframes paper-boil-c {
+  0%,      66.65%  { opacity: 0; }
+  66.66%, 100%     { opacity: 1; }
+}
+.paper-boil-a { animation: paper-boil-a 0.4s steps(1, end) infinite; }
+.paper-boil-b { animation: paper-boil-b 0.4s steps(1, end) infinite; }
+.paper-boil-c { animation: paper-boil-c 0.4s steps(1, end) infinite; }
+
+/* ── Sheet jitter ────────────────────────────────────────────────────────────
+   A whole sheet shifting by a pixel or two on a 6fps beat. This is the single
+   biggest contributor to the stop-motion read: static objects in stop motion
+   are never perfectly static, because the animator nudged the rig. */
+@keyframes paper-jitter {
+  0%   { transform: translate3d(0, 0, 0)          rotate(var(--tilt, 0deg)); }
+  25%  { transform: translate3d(0.6px, -0.8px, 0) rotate(calc(var(--tilt, 0deg) + 0.12deg)); }
+  50%  { transform: translate3d(-0.5px, 0.5px, 0) rotate(var(--tilt, 0deg)); }
+  75%  { transform: translate3d(0.4px, 0.7px, 0)  rotate(calc(var(--tilt, 0deg) - 0.12deg)); }
+  100% { transform: translate3d(0, 0, 0)          rotate(var(--tilt, 0deg)); }
+}
+.paper-jitter {
+  animation: paper-jitter 0.6667s steps(1, end) infinite;
+}
+
+/* ── Stepped rotation ────────────────────────────────────────────────────────
+   A badge that turns in 24 discrete positions instead of sweeping. 24 poses
+   over 9s ≈ 2.7 jumps a second — slow enough that each pose registers as a
+   held frame rather than as a stutter. */
+@keyframes paper-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.paper-spin-stepped { animation: paper-spin 9s steps(24, end) infinite; }
+
+/* ── Stepped marquee ─────────────────────────────────────────────────────────
+   The track holds two identical copies and travels exactly -50%, so the loop
+   is seamless. steps(64) makes it advance in chunks — the belt equivalent of
+   animating on twos. */
+@keyframes paper-marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+.paper-marquee-track { animation: paper-marquee 26s steps(64, end) infinite; }
+
+/* ── Paper surface ───────────────────────────────────────────────────────────
+   Fibre tooth, not "noise". Two very low-opacity repeating gradients at odd
+   angles read as pressed pulp; a third, wider one gives the faint mottling of
+   uncoated stock. All static — painted once, then it is just a bitmap. */
+/* Deliberately does NOT set `position`. This class is a SURFACE — colour and
+   tooth — not a layout primitive. It used to carry `position: relative`, which
+   silently beat Tailwind's `.absolute` on any element that had both (same
+   specificity, and this file is emitted after the utilities), so a pinned
+   sheet would quietly render in flow instead. Every sheet that hosts a
+   TornEdge, tape or a curl declares `relative` at the call site instead. */
+.paper-sheet {
+  background-color: var(--paper);
+  background-image:
+    repeating-linear-gradient(  63deg, rgba(23,18,14,0.030) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient( -21deg, rgba(23,18,14,0.024) 0 1px, transparent 1px 5px),
+    radial-gradient(ellipse 70% 50% at 25% 20%, rgba(255,251,240,0.6), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 82% 88%, rgba(23,18,14,0.05), transparent 70%);
+  color: var(--ink);
+}
+
+/* Tone overrides — same tooth and lighting, different stock. */
+.paper-sheet--hi    { background-color: var(--paper-hi); }
+.paper-sheet--board { background-color: var(--paper-2); }
+
+/* A sheet printed solid in the accent, with paper reversed out of it. Black
+   type on this would sit at ~2.4:1 — an earth red is too dark to carry it. */
+.paper-sheet--spot {
+  background-color: var(--spot);
+  background-image:
+    repeating-linear-gradient(63deg, rgba(21,17,13,0.09) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse 70% 50% at 30% 15%, rgba(255,255,255,0.16), transparent 70%);
+  color: var(--paper-hi);
+}
+
+/* A sheet printed solid in the structure ink. The cool block that stops a page
+   of cream and red from reading as entirely warm. */
+.paper-sheet--spot2 {
+  background-color: var(--spot-2);
+  background-image:
+    repeating-linear-gradient(63deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse 70% 50% at 28% 18%, rgba(255,255,255,0.10), transparent 70%);
+  color: var(--paper-hi);
+}
+
+.paper-sheet--dark {
+  background-color: #1B1510;
+  background-image:
+    repeating-linear-gradient(63deg, rgba(255,255,255,0.035) 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse 70% 50% at 25% 20%, rgba(255,251,240,0.07), transparent 70%);
+  color: var(--paper-hi);
+}
+
+/* Ruled note paper. The rules are petrol, not grey — ruled stock has always
+   been printed in a pale blue ink, and borrowing spot 2 for it ties the
+   texture into the palette instead of adding a fifth colour. */
+.paper-ruled {
+  background-image:
+    repeating-linear-gradient(63deg, rgba(23,18,14,0.030) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(180deg, transparent 0 27px, rgba(44,58,52,0.15) 27px 28px);
+}
+
+/* Graph paper for the fold-out note interior — same petrol rule, both axes. */
+.paper-grid {
+  background-image:
+    repeating-linear-gradient(  0deg, rgba(44,58,52,0.12) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient( 90deg, rgba(44,58,52,0.12) 0 1px, transparent 1px 22px);
+}
+
+/* ── Cast shadow ─────────────────────────────────────────────────────────────
+   Paper lying on a surface: a tight contact shadow plus a wide soft one. No
+   blur filter, so it costs a single paint. */
+.paper-shadow {
+  box-shadow:
+    0 1px 0 rgba(23,18,14,0.55),
+    0 10px 22px -8px rgba(0,0,0,0.75),
+    0 40px 70px -30px rgba(0,0,0,0.9);
+}
+
+/* ── Highlighter swipe ───────────────────────────────────────────────────────
+   Sits behind text. Uneven top/bottom edges and a slightly rotated body so it
+   looks laid down by hand, and it over-runs the word at one end.
+
+   The ink is a real element rather than a ::before because GSAP has to animate
+   its scaleX to "draw" the stroke, and pseudo-elements aren't scriptable.
+   mix-blend-mode: multiply is what keeps the black text fully legible through
+   the ink — the same reason a real highlighter works. */
+.paper-marker {
+  position: relative;
+  display: inline-block;
+  z-index: 0;
+}
+.paper-marker-text { position: relative; z-index: 1; }
+.paper-marker-ink {
+  position: absolute;
+  z-index: 0;
+  left: -0.18em;
+  right: -0.32em;
+  top: 0.14em;
+  bottom: 0.1em;
+  background: var(--spot);
+  opacity: 0.72;
+  mix-blend-mode: multiply;
+  transform-origin: left center;
+  clip-path: polygon(
+    0% 12%,  6% 4%,  22% 9%,  41% 2%,  63% 8%,  81% 3%,  95% 10%, 100% 6%,
+    100% 88%, 88% 96%, 69% 90%, 47% 97%, 28% 91%, 12% 98%, 3% 92%
+  );
+  pointer-events: none;
+}
+
+/* drop-shadow, not box-shadow: box-shadow is drawn from the rectangular border
+   box and ignores clip-path, so a torn strip would get a straight-edged shadow.
+   A filter traces the clipped silhouette instead. */
+.paper-strip-shadow {
+  filter: drop-shadow(-2px 6px 7px rgba(0, 0, 0, 0.42));
+}
+
+/* ── Cast shadow ─────────────────────────────────────────────────────────────
+   A sibling that sits BEHIND the sheet, inset far enough that its blur never
+   creeps past a torn edge. It has to be a sibling, not a child: a child can
+   never paint behind its own parent's background, and box-shadow on the sheet
+   itself would draw a straight line across every tear. */
+.paper-cast {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow:
+    0 26px 60px -22px rgba(0, 0, 0, 0.95),
+    0 6px 18px -8px rgba(0, 0, 0, 0.8);
+}
+
+/* ── Rubber stamp ────────────────────────────────────────────────────────────
+   Ink that didn't take evenly: a hard border, patchy fill, rotated off-square.
+   The blotchiness comes from two offset radial gradients masking the ink.
+
+   Stamped in the accent: a rubber stamp in red is the archetype, and it is one
+   of the few marks on the page that is genuinely meant to grab first. */
+.paper-stamp {
+  position: relative;
+  border: 2.5px solid var(--spot-ink);
+  color: var(--spot-ink);
+  padding: 0.5rem 1.1rem;
+  background:
+    radial-gradient(ellipse 40% 60% at 18% 30%, rgba(251,246,234,0.78), transparent 60%),
+    radial-gradient(ellipse 35% 50% at 78% 72%, rgba(251,246,234,0.62), transparent 60%),
+    rgba(188, 69, 38, 0.10);
+  opacity: 0.92;
+}
+.paper-stamp::after {
+  /* a second, misregistered impression — the classic double-stamp */
+  content: '';
+  position: absolute;
+  inset: 2px -1px -2px 1px;
+  border: 1px solid rgba(158, 52, 23, 0.3);
+  pointer-events: none;
+}
+
+/* ── Tape ────────────────────────────────────────────────────────────────────
+   Milky rather than merely translucent. A near-transparent white tape looks
+   right over the paper but turns into a dark smudge over the page black, since
+   there is nothing behind it to lighten — so it carries its own pale body and
+   only lets some of the backdrop through. */
+.paper-tape {
+  position: absolute;
+  background: linear-gradient(
+    100deg,
+    rgba(247,241,228,0.76) 0%,
+    rgba(247,241,228,0.62) 38%,
+    rgba(255,251,242,0.82) 52%,
+    rgba(247,241,228,0.62) 66%,
+    rgba(247,241,228,0.74) 100%
+  );
+  border-left: 1px solid rgba(255,251,242,0.30);
+  border-right: 1px solid rgba(255,251,242,0.30);
+  clip-path: polygon(
+    0% 8%, 14% 0%, 33% 7%, 55% 1%, 76% 8%, 92% 2%, 100% 9%,
+    100% 92%, 84% 100%, 62% 93%, 40% 99%, 19% 92%, 6% 99%
+  );
+  pointer-events: none;
+}
+
+/* ── Crease ──────────────────────────────────────────────────────────────────
+   A fold line is a bright edge where the paper catches light and a dark one in
+   the valley, both hairline. */
+.paper-crease {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    180deg,
+    rgba(23,18,14,0.24) 0%,
+    rgba(23,18,14,0.11) 45%,
+    rgba(255,251,242,0.7) 55%,
+    rgba(255,251,242,0.18) 100%
+  );
+  pointer-events: none;
+}
+
+/* ── Stepped interactions ────────────────────────────────────────────────────
+   Hover states move in 3 discrete jumps rather than easing, so pointer
+   feedback obeys the same 12fps rule as everything else. Only `transform` is
+   transitioned — the drop-shadow stays put, because animating a filter means
+   re-running the blur every frame for no visual gain at this size. */
+.pp-strip-face {
+  transition: transform 0.24s steps(3, end);
+  cursor: none;
+}
+.pp-strip:hover .pp-strip-face {
+  transform: translate3d(7px, -5px, 0);
+}
+
+/* ── Corner curl ─────────────────────────────────────────────────────────────
+   The bottom-left corner lifts off the board on hover. Two overlapping
+   triangles do the whole trick: a dark one is the shadow the lifted corner
+   throws onto the board, and a pale one on top is the BACK of the sheet, which
+   is why it is lit from the opposite side to the face.
+
+   It lives on the <li>, not on the face — the face is clipped by its torn
+   edge, and a pseudo-element on it would be clipped away with everything else. */
+.pp-curl,
+.pp-curl-shadow {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  transform-origin: bottom left;
+  transform: scale(0);
+  transition: transform 0.24s steps(3, end);
+}
+.pp-curl-shadow {
+  z-index: 1;
+  background: rgba(23, 18, 14, 0.58);
+  clip-path: polygon(0 100%, 0 16%, 100% 100%);
+  filter: blur(4px);
+  transform-origin: bottom left;
+}
+.pp-curl {
+  z-index: 2;
+  /* Lit from bottom-left because we are seeing the reverse of the sheet. */
+  background: linear-gradient(42deg, var(--paper-hi) 0%, var(--paper-2) 55%, var(--paper-3) 100%);
+  clip-path: polygon(0 100%, 0 22%, 100% 100%);
+}
+.pp-strip:hover .pp-curl,
+.pp-strip:hover .pp-curl-shadow {
+  transform: scale(1);
+}
+
+/* ── Blinking caret ──────────────────────────────────────────────────────────
+   Two states, hard cut, on the 12fps grid (0.5s = 6 frames per state). */
+@keyframes paper-caret {
+  0%, 49.9%   { opacity: 1; }
+  50%, 100%   { opacity: 0; }
+}
+.paper-caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.9em;
+  background: currentColor;
+  animation: paper-caret 1s steps(1, end) infinite;
+}
+
+/* ── Stamp ink bleed ─────────────────────────────────────────────────────────
+   Ink keeps spreading for a beat after the stamp lifts. Driven off the
+   `is-inked` class GSAP adds once the thwack lands, so the bleed can never
+   start before the impression does. */
+.paper-stamp::after {
+  opacity: 0;
+  transition: opacity 0.16s steps(2, end) 0.1s, inset 0.16s steps(2, end) 0.1s;
+}
+.paper-stamp.is-inked::after {
+  opacity: 1;
+  inset: 3px -2px -3px 2px;
+}
+
+/* ── Fold-out note ───────────────────────────────────────────────────────────
+   Real origami nesting: each panel is a child of the one above it and rotates
+   about their shared crease, so opening a panel carries everything below it —
+   the way a folded letter actually behaves. Three panels is enough to read as
+   a letter fold and cheap enough to stay on the compositor.
+
+   The wrapper reserves the full unfolded height at all times. Panels 2 and 3
+   are absolutely positioned, so the note opening never reflows the page. */
+.pn-stage {
+  perspective: 2200px;
+  perspective-origin: 50% 25%;
+}
+.pn-note {
+  position: relative;
+  transform-style: preserve-3d;
+  height: calc(var(--ph) * 3);
+}
+.pn-panel {
+  position: relative;
+  height: var(--ph);
+  transform-style: preserve-3d;
+}
+/* Matches panels 2 and 3 — panel 1 is a direct child of .pn-note and stays put. */
+.pn-panel .pn-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  transform-origin: top center;
+  /* While folded the panel is edge-on/reversed; hiding the back face means we
+     never see through to the wrong side of the sheet. */
+  backface-visibility: hidden;
+}
+/* The shadow a folded flap casts on the panel beneath it. Fades to nothing as
+   the note flattens — GSAP drives the opacity in the same discrete steps. */
+.pn-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(23, 18, 14, 0.64) 0%, rgba(23, 18, 14, 0.19) 45%, rgba(23, 18, 14, 0) 78%);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────────
+   Stop motion is high-contrast, high-frequency movement — exactly what this
+   query exists to switch off. Everything drops to its resting frame. */
+@media (prefers-reduced-motion: reduce) {
+  .paper-boil-a { animation: none; opacity: 1; }
+  .paper-boil-b,
+  .paper-boil-c { animation: none; opacity: 0; }
+  .paper-jitter,
+  .paper-spin-stepped,
+  .paper-marquee-track { animation: none; }
+  .paper-caret  { animation: none; opacity: 1; }
+  .pp-strip-face,
+  .pp-curl,
+  .pp-curl-shadow { transition: none; }
+}

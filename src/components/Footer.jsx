@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { CONTACT_EMAIL, CONTACT_MAILTO } from '../siteConfig';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,8 +19,8 @@ const lenisTo = (target) => {
 };
 
 const NAV_LINKS = [
-  { label: 'Work',     href: '#projects'  },
   { label: 'About',    href: '#about'     },
+  { label: 'Work',     href: '#projects'  },
   { label: 'Activity', href: '#activity'  },
   { label: 'Contact',  href: '#contact'   },
 ];
@@ -39,7 +40,7 @@ function FooterMarquee() {
   const items = ["Available for work", "Let's collaborate", "Based in Pakistan", "Open to remote"];
   const segment = items.map((item, i) => (
     <span key={i} className="inline-flex items-center gap-5 mx-5">
-      <span className="font-mono text-[11px] uppercase tracking-widest text-[#2e2e2e]">{item}</span>
+      <span className="font-mono text-[11px] uppercase tracking-widest text-faint">{item}</span>
       <span className="font-mono text-[11px] text-green opacity-30" aria-hidden="true">·</span>
     </span>
   ));
@@ -47,7 +48,7 @@ function FooterMarquee() {
   return (
     <div
       className="w-full overflow-hidden border-t border-b border-border py-4 whitespace-nowrap"
-      role="marquee"
+      role="group"
       aria-label="Availability and location info"
     >
       <div ref={trackRef} className="inline-flex">
@@ -121,7 +122,9 @@ export default function Footer() {
           WT<span className="text-green">.</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8" aria-label="Footer navigation">
+        {/* Shown at every width. Hiding it below md left phones with no
+            navigation anywhere on the page. */}
+        <nav className="flex flex-wrap justify-center items-center gap-5 md:gap-8" aria-label="Footer navigation">
           {NAV_LINKS.map(link => (
             <Link
               key={link.label}
@@ -138,7 +141,7 @@ export default function Footer() {
 
         <button
           onClick={() => lenisTo(0)}
-          className="footer-top-btn font-mono text-[11px] uppercase tracking-[0.15em] text-muted hover:text-green transition-colors duration-200 cursor-none outline-none opacity-0"
+          className="footer-top-btn font-mono text-[11px] uppercase tracking-[0.15em] text-muted hover:text-green transition-colors duration-200 cursor-none opacity-0"
           aria-label="Back to top"
           onMouseEnter={() => handleHover(true)}
           onMouseLeave={() => handleHover(false)}
@@ -150,14 +153,23 @@ export default function Footer() {
       {/* Marquee Strip */}
       <FooterMarquee />
 
-      {/* Bottom Row */}
-      <div className="px-6 md:px-16 py-5 flex flex-col md:flex-row items-center justify-between gap-2 text-center md:text-left">
-        <p className="footer-copy font-body text-[12px] text-[#2e2e2e] opacity-0">
-          © 2025 Wasiq Tanveer — Built with React + GSAP
+      {/* Bottom row.
+          This used to end the page on two near-duplicate credit lines that
+          said the same thing twice — the last thing a visitor read, spent on
+          boilerplate. The closing note is now the one thing worth acting on:
+          a real address they can write to. */}
+      <div className="px-6 md:px-16 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+        <p className="footer-copy font-body text-[12px] text-muted opacity-0">
+          © 2025 Wasiq Tanveer — designed &amp; built with React and GSAP
         </p>
-        <p className="footer-copy font-body text-[12px] text-[#2e2e2e] opacity-0">
-          Designed &amp; Developed by Wasiq Tanveer
-        </p>
+        <a
+          href={CONTACT_MAILTO}
+          className="footer-copy font-mono text-[12px] text-muted hover:text-green transition-colors underline underline-offset-4 decoration-border hover:decoration-green opacity-0"
+          onMouseEnter={() => handleHover(true)}
+          onMouseLeave={() => handleHover(false)}
+        >
+          {CONTACT_EMAIL}
+        </a>
       </div>
 
     </footer>

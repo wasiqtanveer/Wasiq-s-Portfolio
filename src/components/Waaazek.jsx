@@ -1,9 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import './Waaazek.css';
+import { CONTACT_EMAIL } from '../siteConfig';
 import { renderMarkdown } from './waaazekMarkdown';
 
 const STORAGE_KEY = 'waaazek_chat';
+
+// Module scope: these are constants, so rebuilding the array on every render
+// made it a fresh dependency each time and the idle-peek effect could never
+// declare it honestly.
+const IDLE_MESSAGES = [
+  "PSST! NEED HELP? 👋",
+  "HI THERE! I'M WAAAZEK",
+  "ASK ME ABOUT WASIQ!",
+  "I DON'T BITE... MUCH 🤖"
+];
 
 // Rehydrate a prior conversation (same browsing session) so closing/reopening
 // or a refresh doesn't wipe the chat. Times are revived back into Date objects.
@@ -40,13 +51,6 @@ const Waaazek = () => {
   const inputRef = useRef(null);
   const idleMsgIndex = useRef(0);
   const atBottomRef = useRef(true); // is the user pinned to the bottom of the log?
-
-  const IDLE_MESSAGES = [
-    "PSST! NEED HELP? 👋",
-    "HI THERE! I'M WAAAZEK",
-    "ASK ME ABOUT WASIQ!",
-    "I DON'T BITE... MUCH 🤖"
-  ];
 
   const pills = [
     "What can Wasiq build?",
@@ -364,12 +368,12 @@ const Waaazek = () => {
         } else if (response.status === 400) {
           pushBot(data.reply || "Hmm, I couldn't read that one — mind rephrasing?");
         } else {
-          pushBot("My brain glitched for a sec! ⚡ Try again, or reach Wasiq at mwasqit@gmail.com");
+          pushBot("My brain glitched for a sec! ⚡ Try again, or reach Wasiq at " + CONTACT_EMAIL);
         }
         return;
       }
 
-      pushBot(data.reply || "Hmm I had trouble — reach Wasiq at mwasqit@gmail.com");
+      pushBot(data.reply || "Hmm I had trouble — reach Wasiq at " + CONTACT_EMAIL);
 
       if (wantsCv) {
         setTimeout(() => {
@@ -380,7 +384,7 @@ const Waaazek = () => {
 
     } catch {
       // Network-level failure (offline, DNS, CORS, aborted).
-      pushBot("Looks like the connection dropped! 📡 Check your internet and try again, or email Wasiq at mwasqit@gmail.com");
+      pushBot("Looks like the connection dropped! 📡 Check your internet and try again, or email Wasiq at " + CONTACT_EMAIL);
     } finally {
       setIsLoading(false);
       setTimeout(() => setCooldown(false), 2000);
@@ -416,6 +420,10 @@ const Waaazek = () => {
   // Clear the whole conversation and reset to the welcome state.
   const clearChat = (e) => {
     e?.stopPropagation();
+    // Confirm first. This wipes the whole conversation with no undo, and it
+    // sits one small button away from the close control in the same header —
+    // an easy misclick that silently destroyed everything the visitor typed.
+    if (messages.length && !window.confirm('Clear this conversation? It cannot be undone.')) return;
     setMessages([]);
     setShowWelcome(false);
     setPillsVisible(true);
@@ -432,18 +440,25 @@ const Waaazek = () => {
 
   return (
     <>
-      <div 
-        className={`waaazek-wrapper`} 
+      {/* A button, not a click-handler div. It opens a chat panel but could not
+          be tabbed to or activated from the keyboard, and announced as nothing
+          — on mobile, where the speech bubble is hidden, it was an unlabelled
+          shape that opened a full-height panel when touched. */}
+      <button
+        type="button"
+        className={`waaazek-wrapper`}
         ref={wrapperRef}
         onClick={openChat}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        aria-label="Open chat with Waaazek, the site assistant"
+        aria-expanded={isOpen}
         style={{ transform: 'translateX(100%)', opacity: 0 }}
       >
         <div className="waaazek-robot-container">
           {badgeVisible && <div className="waaazek-badge" />}
-          
-          <svg width="100" height="120" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+
+          <svg aria-hidden="true" width="100" height="120" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
             <g className="waaazek-head-group">
               {/* Antenna */}
               <rect x="48.5" y="6" width="3" height="14" fill="rgba(57,255,20,0.4)" />
@@ -490,11 +505,11 @@ const Waaazek = () => {
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '11px', color: '#39FF14' }}>
             {idleMessage || "HI! I'M WAAAZEK 👋"}
           </div>
-          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '10px', color: '#565656', marginTop: '4px' }}>
+          <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '10px', color: '#8A8A85', marginTop: '4px' }}>
             [ click to chat ]
           </div>
         </div>
-      </div>
+      </button>
 
       <div 
         className="waaazek-chat-container" 
