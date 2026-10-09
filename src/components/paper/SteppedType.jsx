@@ -26,8 +26,9 @@ export default function SteppedType({
   /** Delay after the trigger fires. */
   delay = 0,
   cursor = false,
-  as: Tag = 'span',
+  as: tag = 'span',
 }) {
+  const Tag = tag;
   const ref = useRef(null);
 
   useGSAP(() => {

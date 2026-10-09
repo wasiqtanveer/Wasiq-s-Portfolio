@@ -45,9 +45,116 @@
   <!-- Google Fonts with font-display: swap -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <!-- First-load preloader. It lives here, not in the app, so it is on screen and
+       moving from the very first paint, before any JavaScript, three.js, or the
+       knot has loaded; everything that moves is a compositor animation. The app
+       (Preloader.jsx) only tells it when to finish and lift. -->
+  <style>
+    .exp-loader { position: fixed; inset: 0; z-index: 1450; display: flex; flex-direction: column; justify-content: space-between; padding: 0 4vw; background: #0e6b4c; color: #f1f6f2; font-family: 'Inter Tight', Arial, sans-serif; box-shadow: 0 40px 70px -30px #0d1a1480; overflow: hidden; }
+    .exp-loader-mark { display: flex; align-items: center; height: 105px; font-size: 36px; font-weight: 800; letter-spacing: -0.075em; line-height: 1; }
+    .exp-loader-mark > span { align-self: flex-start; margin: 38px 0 0 5px; font-size: 13px; letter-spacing: 0; }
+    .exp-loader-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 6vh; }
+    .exp-loader-count { display: flex; align-items: flex-start; font-size: clamp(120px, 23vw, 360px); font-weight: 600; letter-spacing: -0.08em; line-height: 1; font-variant-numeric: tabular-nums; margin-left: -0.05em; }
+    .exp-loader-count em { margin: 0.08em 0 0 0.12em; font-family: Georgia, 'Times New Roman', serif; font-size: 0.26em; font-weight: 400; letter-spacing: 0; color: #bfe6cf; }
+    .exp-odo-window { display: block; height: 1em; overflow: hidden; margin-right: -0.04em; }
+    .exp-odo-col { display: block; will-change: transform; }
+    .exp-odo-col > span { display: block; height: 1em; }
+    .exp-loader-stage { padding-bottom: 0.9em; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: clamp(18px, 2vw, 30px); letter-spacing: -0.03em; color: #bfe6cf; text-align: right; }
+    .exp-loader-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #f1f6f22e; }
+    .exp-loader-bar i { display: block; height: 100%; background: #f1f6f2; transform: scaleX(0); transform-origin: left; will-change: transform; }
+    @media (max-width: 799px) {
+      .exp-loader { padding: 0 6vw; }
+      .exp-loader-mark { height: 86px; font-size: 29px; }
+      .exp-loader-mark > span { margin-top: 30px; }
+      .exp-loader-foot { flex-direction: column; align-items: flex-start; gap: 8px; padding-bottom: 8vh; }
+      .exp-loader-count { font-size: 34vw; }
+      .exp-loader-stage { order: -1; padding-bottom: 0; text-align: left; font-size: 19px; }
+    }
+  </style>
 </head>
 <body class="bg-[#0a0a0a] text-[#EAEAE6] font-light overflow-x-hidden">
+  <div id="exp-boot" class="exp-loader" aria-hidden="true">
+    <span class="exp-loader-mark">wasiq<span>®</span></span>
+    <div class="exp-loader-foot">
+      <div class="exp-loader-count"><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><em>%</em></div>
+      <span class="exp-loader-stage">Setting the type…</span>
+    </div>
+    <span class="exp-loader-bar"><i></i></span>
+  </div>
+  <script>
+    // The counter crawls on its own clock from the first paint (fast, then
+    // patient); the app calls finish() when the real work is done and lift()
+    // to raise the curtain. Odometer columns wrap with two keyframes at the
+    // same offset (the trailing 0, then the leading 0), so the jump is invisible.
+    (() => {
+      const el = document.getElementById('exp-boot');
+      if (location.pathname.startsWith('/paper')) { el.remove(); return; }
+      const cols = [...el.querySelectorAll('.exp-odo-col')];
+      cols.forEach((col) => { col.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => '<span>' + d + '</span>').join(''); });
+      const targets = cols.concat(el.querySelector('.exp-loader-bar i'));
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const CRAWL = 9000, SHARPNESS = 6.7;
+      const at = (position) => 'translate3d(0,' + (-position * 100 / 11) + '%,0)';
+      const crawl = (x) => 100 * (1 - Math.pow(1 - x, SHARPNESS));
+      const crawlTime = (value) => 1 - Math.pow(1 - value / 100, 1 / SHARPNESS);
+      const frames = (samples) => {
+        const hundreds = [], tens = [], ones = [], bar = [];
+        let previous = null;
+        for (const [offset, value] of samples) {
+          const carry = Math.max(0, (value % 10) - 9);
+          if (previous) {
+            for (let wrap = Math.floor(previous[1] / 10) * 10 + 10; wrap <= value; wrap += 10) {
+              const crossing = previous[0] + (wrap - previous[1]) / (value - previous[1]) * (offset - previous[0]);
+              ones.push({ offset: crossing, transform: at(10) }, { offset: crossing, transform: at(0) });
+            }
+          }
+          ones.push({ offset, transform: at(value % 10) });
+          tens.push({ offset, transform: at(Math.floor(value / 10) + carry) });
+          hundreds.push({ offset, transform: at(Math.floor(value / 100) + (Math.floor(value / 10) % 10 === 9 ? carry : 0)) });
+          bar.push({ offset, transform: 'scaleX(' + value / 100 + ')' });
+          previous = [offset, value];
+        }
+        return [hundreds, tens, ones, bar];
+      };
+      const play = (sets, duration) => sets.map((list, index) => targets[index].animate(list, { duration, fill: 'forwards' }));
+      const started = performance.now();
+      let running = reduce ? [] : play(frames(Array.from({ length: 101 }, (_, value) => [crawlTime(value), value])), CRAWL);
+      window.__boot = {
+        el, started,
+        stage: (text) => { el.querySelector('.exp-loader-stage').textContent = text; },
+        finish: () => new Promise((resolve) => {
+          if (reduce) {
+            targets.forEach((target, index) => { target.style.transform = index === 3 ? 'scaleX(1)' : at(index === 0 ? 1 : 0); });
+            resolve();
+            return;
+          }
+          const elapsed = Number(running[0] && running[0].currentTime) || performance.now() - started;
+          const from = Math.min(99.9, crawl(Math.min(1, elapsed / CRAWL)));
+          const next = play(frames(Array.from({ length: 61 }, (_, index) => {
+            const x = index / 60;
+            return [x, from + (100 - from) * (1 - Math.pow(1 - x, 3))];
+          })), 650);
+          running.forEach((animation) => animation.cancel());
+          running = next;
+          next[0].onfinish = () => resolve();
+        }),
+        lift: (onUncover) => new Promise((resolve) => {
+          const done = () => { el.remove(); resolve(); };
+          if (reduce) {
+            onUncover();
+            el.animate({ opacity: [1, 0] }, { duration: 300, fill: 'forwards' }).onfinish = done;
+            return;
+          }
+          // One continuous heave; the contents travel a little faster than the cloth.
+          const options = { duration: 1000, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' };
+          el.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-104%,0)'] }, options).onfinish = done;
+          el.querySelectorAll('.exp-loader-mark, .exp-loader-foot').forEach((node) => node.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-16vh,0)'] }, options));
+          setTimeout(onUncover, 300);
+        }),
+      };
+    })();
+  </script>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>
