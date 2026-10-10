@@ -102,6 +102,8 @@ html.experience-mode {
 .exp-hero-stage { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .exp-hero-portrait { position: absolute; top: clamp(140px, 20svh, 170px); right: 5vw; width: min(32vw, 500px, 56svh); margin: 0; z-index: 2; transform-origin: center 65%; }
 .exp-hero-portrait-reveal { margin: 0; }
+/* No box on desktop: both layers position against the hero. On phones it stacks them in one grid cell. */
+.exp-hero-portraits { display: contents; }
 .exp-hero-portrait-front { z-index: 4; }
 .exp-hero-portrait-front .exp-hero-portrait-mat { background: transparent; }
 .exp-hero-portrait-front .exp-hero-portrait-mat::before { display: none; }
@@ -290,6 +292,10 @@ html.exp-knot-grabbing .exp-hero { user-select: none; }
   .exp-hero-title { font-size: 15.1vw; padding-top: 38px; line-height: 0.84; }
   .exp-title-second { margin-top: 0.28em; }
   .exp-hero-portrait { position: relative; top: auto; right: auto; align-self: flex-end; flex-shrink: 0; width: min(62vw, 310px); margin-right: 6%; }
+  .exp-hero-portraits { display: grid; align-self: flex-end; flex-shrink: 0; width: min(62vw, 310px); margin-right: 6%; }
+  .exp-hero-portraits > .exp-hero-portrait { grid-area: 1 / 1; width: 100%; margin-right: 0; }
+  /* Below the knot, which leans on the portrait here. */
+  .exp-hero-portrait-front { z-index: 2; }
   .exp-hero-portrait figcaption { justify-content: flex-end; font-size: 9px; padding-top: 10px; }
   .exp-hero-portrait figcaption span { display: none; }
   .exp-orbit-label { font-size: 9px; }
