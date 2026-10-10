@@ -88,7 +88,7 @@ html.experience-mode {
 .exp-hero { position: relative; min-height: 790px; height: 100svh; max-height: 1200px; padding: 132px 4vw 85px; display: flex; flex-direction: column; overflow: hidden; isolation: isolate; }
 .exp-hero-topline { display: flex; justify-content: space-between; z-index: 3; }
 .exp-hero-topline > :last-child { text-align: right; }
-.exp-hero-title { position: relative; z-index: 3; font-size: clamp(96px, 15.5vw, 245px); font-weight: 600; letter-spacing: -0.075em; line-height: 0.78; padding: 48px 0 28px; width: 100%; }
+.exp-hero-title { pointer-events: none; position: relative; z-index: 3; font-size: clamp(96px, 15.5vw, 245px); font-weight: 600; letter-spacing: -0.075em; line-height: 0.78; padding: 48px 0 28px; width: 100%; }
 .exp-title-line { display: block; }
 .exp-title-second { text-align: right; margin-top: 0.15em; }
 .exp-title-dot { color: var(--exp-accent-ink); }
@@ -99,9 +99,9 @@ html.experience-mode {
 .exp-hero-stage { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .exp-hero-portrait { position: absolute; top: 170px; right: 5vw; width: min(32vw, 500px); margin: 0; z-index: 2; transform-origin: center 65%; }
 .exp-hero-portrait-reveal { margin: 0; }
-.exp-hero-portrait-mat { position: relative; aspect-ratio: 1; border-radius: 50% 50% 3px 3px; overflow: hidden; background: var(--exp-accent); }
+.exp-hero-portrait-mat { display: block; width: 100%; padding: 0; border: 0; position: relative; aspect-ratio: 1; border-radius: 50% 50% 3px 3px; overflow: hidden; background: var(--exp-accent); cursor: pointer; }
 .exp-hero-portrait-mat::before { content: ''; position: absolute; inset: 6%; border: 1px solid color-mix(in srgb, var(--exp-on-accent) 22%, transparent); border-radius: inherit; }
-.exp-hero-portrait img { position: absolute; left: 0; bottom: 0; display: block; width: 100%; height: auto; filter: var(--exp-photo-filter); }
+.exp-hero-portrait img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 24%; filter: grayscale(1) var(--exp-photo-filter); }
 .exp-hero-portrait figcaption { display: flex; justify-content: space-between; padding: 13px 1px 0; color: var(--exp-muted); }
 .exp-sculpture { position: absolute; inset: 0; }
 .exp-sculpture canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
@@ -185,7 +185,7 @@ html.exp-knot-grabbing .exp-hero { user-select: none; }
 .exp-portrait-wrap { width: 100%; max-width: 350px; justify-self: center; transform: rotate(-4deg); }
 .exp-portrait { position: relative; background: var(--exp-surface); aspect-ratio: 0.84; border-radius: 50% 50% 4px 4px; display: flex; align-items: end; isolation: isolate; }
 .exp-portrait::before { content: ''; position: absolute; width: 69%; aspect-ratio: 1; border-radius: 50%; background: var(--exp-accent); top: 12%; left: 16%; z-index: -1; }
-.exp-portrait img { width: 100%; height: 95%; object-fit: cover; object-position: center bottom; border-radius: inherit; }
+.exp-portrait img { width: 100%; height: 95%; object-fit: cover; object-position: center 22%; border-radius: inherit; filter: grayscale(1); }
 .exp-portrait-star { position: absolute; right: -12%; top: 2%; color: var(--exp-accent-ink); font-size: 105px; line-height: 1; }
 .exp-portrait-wrap > .exp-label { display: flex; justify-content: space-between; padding-top: 15px; }
 .exp-about h2 { font-size: clamp(47px, 6.7vw, 103px); line-height: 0.98; font-weight: 400; letter-spacing: -0.06em; margin-bottom: 35px; }

@@ -4,7 +4,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import emailjs from '@emailjs/browser';
-import portrait from '../../assets/unnamed - Edited.png';
+import CursorPortrait from './CursorPortrait';
 import { CONTACT_EMAIL, CONTACT_MAILTO, SOCIAL_LINKS } from '../../siteConfig';
 import { projects, experiments } from './projects';
 import KnotMark from './KnotMark';
@@ -104,7 +104,7 @@ function Hero() {
   return <section ref={hero} className="exp-hero" id="hero" data-tone="paper" aria-labelledby="hero-title">
     <div className="exp-hero-topline exp-label"><span>Wasiq Tanveer<br />Developer & creative problem solver</span><span>Based in Pakistan<br />Building for everywhere ↗</span></div>
     <h1 id="hero-title" className="exp-hero-title" aria-label="A little different."><span className="exp-title-line" aria-hidden="true">{'A LITTLE'.split('').map((char, index) => <span className="exp-letter" key={index}>{char === ' ' ? '\u00a0' : char}</span>)}</span><span className="exp-title-line exp-title-second" aria-hidden="true">{'DIFFERENT'.split('').map((char, index) => <span className="exp-letter" key={index}>{char}</span>)}<span className="exp-title-dot exp-letter">.</span></span></h1>
-    <div className="exp-hero-portrait"><figure className="exp-hero-portrait-reveal"><div className="exp-hero-portrait-mat"><img src={portrait} alt="Wasiq Tanveer" width="1000" height="924" fetchPriority="high" /></div><figcaption className="exp-label">The human behind the work. <span aria-hidden="true">↗</span></figcaption></figure></div>
+    <div className="exp-hero-portrait"><figure className="exp-hero-portrait-reveal"><CursorPortrait /><figcaption className="exp-label">The human behind the work. <span aria-hidden="true">↗</span></figcaption></figure></div>
     <div className="exp-hero-stage" aria-hidden="true"><Suspense fallback={null}><Sculpture /></Suspense></div>
     <div className="exp-hero-object" aria-hidden="true"><div className="exp-sculpture-fallback"><i /><i /><i /></div></div>
     <span className="exp-orbit-label exp-label" aria-hidden="true">Logic, with a little magic.</span>
@@ -208,7 +208,7 @@ function About() {
   return <section className="exp-about exp-section-pad" id="about" data-tone="paper" aria-labelledby="about-title">
     <div className="exp-section-kicker exp-label"><span>02 / The person behind the pixels</span><span>A developer. And then some.</span></div>
     <div className="exp-about-grid">
-      <div className="exp-portrait-wrap"><div className="exp-portrait"><img src={portrait} alt="Wasiq Tanveer" loading="lazy" width="1000" height="924" /><span className="exp-portrait-star" aria-hidden="true"><KnotMark /></span></div><span className="exp-label">Hello from Pakistan <span aria-hidden="true">↗</span></span></div>
+      <div className="exp-portrait-wrap"><div className="exp-portrait"><img src="/portrait-sprites/neutral.webp" alt="Wasiq Tanveer" loading="lazy" width="1024" height="1536" /><span className="exp-portrait-star" aria-hidden="true"><KnotMark /></span></div><span className="exp-label">Hello from Pakistan <span aria-hidden="true">↗</span></span></div>
       <div className="exp-about-copy"><h2 id="about-title" data-reveal><span className="exp-line-mask"><span>Curiosity,</span></span><span className="exp-line-mask"><em>put to work.</em></span></h2><p>I’m Wasiq. I build the parts you see, the systems you don’t, and the little details that make everything click.</p><p>Sometimes that’s a full-stack web app. Sometimes it’s a Chrome extension or an automation that quietly saves someone hours. I like making useful things feel effortless.</p><MagneticLink href="/Wasiq_CV_v2.pdf" download className="exp-text-link">A little more about me — my CV <span>↓</span></MagneticLink></div>
     </div>
     <div className="exp-capabilities"><div className="exp-capability-intro"><span className="exp-label">Different disciplines.<br />One connected experience.</span><span className="exp-asterisk" aria-hidden="true"><KnotMark /></span></div><div className="exp-capability-list">

@@ -57,7 +57,7 @@ export default function Preloader() {
     const finish = () => {
       if (finished || !alive) return;
       finished = true;
-      boot.stage('Ready when you are.');
+      boot.stage('Ready when you are.', 350);
       boot.finish()
         .then(() => new Promise((resolve) => timers.push(setTimeout(resolve, HOLD))))
         .then(() => alive && boot.lift(release))
@@ -72,20 +72,16 @@ export default function Preloader() {
       else timers.push(setTimeout(finish, Math.max(0, MINIMUM - (performance.now() - boot.started))));
     }));
 
-    // Hold the page still underneath until the curtain lifts.
+    // Hold the page still underneath until the curtain lifts (the wheel, touch
+    // and key lock itself lives in index.html, so it is there from first paint).
     const stopScroll = requestAnimationFrame(() => { if (!finished) window.__lenis?.stop(); });
-    const block = (event) => event.preventDefault();
-    boot.el.addEventListener('wheel', block, { passive: false });
-    boot.el.addEventListener('touchmove', block, { passive: false });
 
     return () => {
       alive = false;
       cancelAnimationFrame(stopScroll);
       timers.forEach(clearTimeout);
-      boot.el.removeEventListener('wheel', block);
-      boot.el.removeEventListener('touchmove', block);
       // A real unmount mid-load (not React's development re-run) clears the stage.
-      releaseTimer = setTimeout(() => { boot.el.remove(); uncover(); release(); }, 60);
+      releaseTimer = setTimeout(() => { boot.remove(); uncover(); release(); }, 60);
     };
   }, []);
 

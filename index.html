@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="theme-color" content="#0e6b4c" />
   <title>Wasiq Tanveer — Full Stack Developer</title>
   <meta name="description" content="Full Stack Developer based in Pakistan. Building clean, scalable web applications. Open to freelance and full-time opportunities." />
   <meta name="author" content="Wasiq Tanveer" />
@@ -14,6 +17,9 @@
   <meta property="og:title" content="Wasiq Tanveer — Full Stack Developer" />
   <meta property="og:description" content="Full Stack Developer based in Pakistan. Open to work." />
   <meta property="og:image" content="https://wasiq-portfolio-delta.vercel.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Wasiq Tanveer, developer and creative problem solver" />
   <meta property="og:url" content="https://wasiq-portfolio-delta.vercel.app/" />
 
   <!-- Twitter Card -->
@@ -60,6 +66,13 @@
     .exp-odo-window { display: block; height: 1em; overflow: hidden; margin-right: -0.04em; }
     .exp-odo-col { display: block; will-change: transform; }
     .exp-odo-col > span { display: block; height: 1em; }
+    /* While the curtain is up the page shows no scrollbar. It is not removed (that
+       would make the page 10px wider, then narrower again when it returns); its
+       thumb and track are simply transparent over the curtain's own green, so
+       the layout never shifts. Scrolling itself is locked by the preloader. */
+    html.exp-booting { overflow-x: hidden !important; overflow-y: scroll !important; scrollbar-color: transparent transparent !important; background: #0e6b4c !important; }
+    html.exp-booting.exp-lifting { background: #eef0eb !important; }
+    .exp-loader-stage > span { display: block; }
     .exp-loader-stage { padding-bottom: 0.9em; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: clamp(18px, 2vw, 30px); letter-spacing: -0.03em; color: #bfe6cf; text-align: right; }
     .exp-loader-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: #f1f6f22e; }
     .exp-loader-bar i { display: block; height: 100%; background: #f1f6f2; transform: scaleX(0); transform-origin: left; will-change: transform; }
@@ -78,7 +91,7 @@
     <span class="exp-loader-mark">wasiq<span>®</span></span>
     <div class="exp-loader-foot">
       <div class="exp-loader-count"><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><em>%</em></div>
-      <span class="exp-loader-stage">Setting the type…</span>
+      <span class="exp-loader-stage"><span>Setting the type…</span></span>
     </div>
     <span class="exp-loader-bar"><i></i></span>
   </div>
@@ -90,6 +103,17 @@
     (() => {
       const el = document.getElementById('exp-boot');
       if (location.pathname.startsWith('/paper')) { el.remove(); return; }
+      const root = document.documentElement;
+      root.classList.add('exp-booting');
+      // The scroll lock is part of the curtain, from the first paint: it must not
+      // wait for the app to mount (which, on a busy page, can take a while).
+      const block = (event) => event.preventDefault();
+      const keys = (event) => {
+        if ([' ', 'PageDown', 'PageUp', 'Home', 'End', 'ArrowDown', 'ArrowUp'].includes(event.key) && !(event.target.closest && event.target.closest('input, textarea'))) event.preventDefault();
+      };
+      el.addEventListener('wheel', block, { passive: false });
+      el.addEventListener('touchmove', block, { passive: false });
+      window.addEventListener('keydown', keys);
       const cols = [...el.querySelectorAll('.exp-odo-col')];
       cols.forEach((col) => { col.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => '<span>' + d + '</span>').join(''); });
       const targets = cols.concat(el.querySelector('.exp-loader-bar i'));
@@ -119,10 +143,32 @@
       };
       const play = (sets, duration) => sets.map((list, index) => targets[index].animate(list, { duration, fill: 'forwards' }));
       const started = performance.now();
+      const label = el.querySelector('.exp-loader-stage > span');
+      let shown = label.textContent, wanted = shown, changedAt = started, minimum = 700, stageTimer = 0;
+      const showStage = () => {
+        stageTimer = 0;
+        if (wanted === shown) return;
+        const wait = minimum - (performance.now() - changedAt);
+        if (wait > 0) { stageTimer = setTimeout(showStage, wait); return; }
+        shown = wanted; changedAt = performance.now();
+        if (reduce) { label.textContent = shown; return; }
+        const out = label.animate({ opacity: [1, 0], transform: ['translate3d(0,0,0)', 'translate3d(0,-45%,0)'] }, { duration: 200, easing: 'cubic-bezier(0.4,0,1,1)', fill: 'forwards' });
+        out.onfinish = () => {
+          label.textContent = shown;
+          label.animate({ opacity: [0, 1], transform: ['translate3d(0,45%,0)', 'translate3d(0,0,0)'] }, { duration: 460, easing: 'cubic-bezier(0.16,1,0.3,1)' });
+          out.cancel();
+        };
+      };
       let running = reduce ? [] : play(frames(Array.from({ length: 101 }, (_, value) => [crawlTime(value), value])), CRAWL);
       window.__boot = {
         el, started,
-        stage: (text) => { el.querySelector('.exp-loader-stage').textContent = text; },
+        remove: () => { el.remove(); window.removeEventListener('keydown', keys); root.classList.remove('exp-booting', 'exp-lifting'); },
+        // Status text changes slide and fade (compositor animations), and each
+        // message stays up for a beat, so quick successive steps never flicker.
+        stage: (text, dwell = 700) => {
+          wanted = text; minimum = dwell;
+          if (!stageTimer) showStage();
+        },
         finish: () => new Promise((resolve) => {
           if (reduce) {
             targets.forEach((target, index) => { target.style.transform = index === 3 ? 'scaleX(1)' : at(index === 0 ? 1 : 0); });
@@ -140,8 +186,9 @@
           next[0].onfinish = () => resolve();
         }),
         lift: (onUncover) => new Promise((resolve) => {
-          const done = () => { el.remove(); resolve(); };
+          const done = () => { window.__boot.remove(); resolve(); };
           if (reduce) {
+            root.classList.add('exp-lifting');
             onUncover();
             el.animate({ opacity: [1, 0] }, { duration: 300, fill: 'forwards' }).onfinish = done;
             return;
@@ -151,6 +198,7 @@
           el.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-104%,0)'] }, options).onfinish = done;
           el.querySelectorAll('.exp-loader-mark, .exp-loader-foot').forEach((node) => node.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-16vh,0)'] }, options));
           setTimeout(onUncover, 300);
+          setTimeout(() => root.classList.add('exp-lifting'), 650);
         }),
       };
     })();
