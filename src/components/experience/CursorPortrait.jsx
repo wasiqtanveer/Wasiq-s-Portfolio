@@ -5,12 +5,12 @@ const DIRECTIONS = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'];
 const SPRITES = [
   'neutral',
   ...DIRECTIONS.map((direction) => `eyes-${direction}`),
-  ...DIRECTIONS.map((direction) => `pose-${direction}`),
   'expression-blink',
   'expression-smile',
   'expression-wink',
   'expression-curious',
   'expression-surprised',
+  ...DIRECTIONS.map((direction) => `pose-${direction}`),
 ];
 const EXPRESSIONS = ['expression-wink', 'expression-curious', 'expression-surprised', 'expression-smile'];
 const urlFor = (name) => `${ROOT}${name}.webp`;
@@ -40,13 +40,32 @@ export default function CursorPortrait() {
     let releaseTimer = 0;
     let expressionIndex = 0;
 
-    for (const name of SPRITES.slice(1)) {
+    // Neutral loads first via the <img>; the rest follow one at a time once the browser is idle.
+    const queue = SPRITES.slice(1);
+    let idleHandle = 0;
+    const loadNext = () => {
+      if (!active || !queue.length) return;
+      const name = queue.shift();
       const preload = new Image();
       preload.decoding = 'async';
-      preload.onload = () => { if (active) ready.add(name); };
+      const done = () => {
+        if (active) ready.add(name);
+        scheduleNext();
+      };
+      preload.onload = done;
+      preload.onerror = scheduleNext;
       preload.src = urlFor(name);
       preloads.push(preload);
-    }
+    };
+    const scheduleNext = () => {
+      if (!active) return;
+      idleHandle = 'requestIdleCallback' in window
+        ? window.requestIdleCallback(loadNext, { timeout: 1500 })
+        : setTimeout(loadNext, 120);
+    };
+    const startQueue = () => scheduleNext();
+    if (image.complete && image.naturalWidth) startQueue();
+    else image.addEventListener('load', startQueue, { once: true });
 
     const show = (name) => {
       if (!ready.has(name) || name === current) return;
@@ -117,7 +136,10 @@ export default function CursorPortrait() {
       cancelAnimationFrame(frame);
       clearInterval(blink);
       clearTimeout(releaseTimer);
-      preloads.forEach((preload) => { preload.onload = null; });
+      image.removeEventListener('load', startQueue);
+      if ('cancelIdleCallback' in window) window.cancelIdleCallback(idleHandle);
+      clearTimeout(idleHandle);
+      preloads.forEach((preload) => { preload.onload = null; preload.onerror = null; });
     };
   }, []);
 
