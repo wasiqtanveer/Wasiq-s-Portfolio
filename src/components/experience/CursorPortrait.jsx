@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 
 const ROOT = '/portrait-sprites/';
 const DIRECTIONS = ['e', 'se', 's', 'sw', 'w', 'nw', 'n', 'ne'];
 const SPRITES = [
   'neutral',
-  ...DIRECTIONS.map((direction) => `eyes-${direction}`),
-  'expression-blink',
   'expression-smile',
+  'expression-blink',
+  ...DIRECTIONS.map((direction) => `eyes-${direction}`),
   'expression-wink',
   'expression-curious',
   'expression-surprised',
@@ -15,10 +16,43 @@ const SPRITES = [
 const EXPRESSIONS = ['expression-wink', 'expression-curious', 'expression-surprised', 'expression-smile'];
 const urlFor = (name) => `${ROOT}${name}.webp`;
 
+// The outline copy of the title (over his cut-out) is masked by his silhouette,
+// so only the letters that actually cover him show an outline. The mask is one
+// static image (the union of every sprite), so it never flickers on a sprite swap.
+const SILHOUETTE = `${ROOT}silhouette.webp`;
+function useOutlineMask(buttonRef) {
+  useEffect(() => {
+    const button = buttonRef.current;
+    const hero = button.closest('.exp-hero');
+    const ghost = hero && hero.querySelector('.exp-hero-title-ghost');
+    if (!ghost) return undefined;
+    ghost.style.setProperty('--ghost-mask', `url("${SILHOUETTE}")`);
+    let last = '';
+    const update = () => {
+      const box = button.getBoundingClientRect();
+      const origin = ghost.getBoundingClientRect();
+      if (!box.width || !origin.width) return;
+      // The sprite is object-fit: cover (1024x1536) at center 24% inside a square.
+      const width = box.width;
+      const height = width * 1.5;
+      const x = box.left - origin.left;
+      const y = box.top - origin.top - (height - width) * 0.24;
+      const key = `${x.toFixed(1)}|${y.toFixed(1)}|${width.toFixed(1)}`;
+      if (key === last) return;
+      last = key;
+      ghost.style.setProperty('--ghost-mask-size', `${width}px ${height}px`);
+      ghost.style.setProperty('--ghost-mask-pos', `${x}px ${y}px`);
+    };
+    gsap.ticker.add(update);
+    return () => { gsap.ticker.remove(update); ghost.style.removeProperty('--ghost-mask'); };
+  }, [buttonRef]);
+}
+
 export default function CursorPortrait() {
   const buttonRef = useRef(null);
   const imageRef = useRef(null);
   const portraitRef = useRef({ show: () => {}, react: () => {} });
+  useOutlineMask(buttonRef);
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -48,10 +82,11 @@ export default function CursorPortrait() {
       const name = queue.shift();
       const preload = new Image();
       preload.decoding = 'async';
-      const done = () => {
+      // Only mark a sprite ready once it is decoded, so swapping to it is instant.
+      const done = () => preload.decode().catch(() => {}).then(() => {
         if (active) ready.add(name);
         scheduleNext();
-      };
+      });
       preload.onload = done;
       preload.onerror = scheduleNext;
       preload.src = urlFor(name);
@@ -60,12 +95,43 @@ export default function CursorPortrait() {
     const scheduleNext = () => {
       if (!active) return;
       idleHandle = 'requestIdleCallback' in window
-        ? window.requestIdleCallback(loadNext, { timeout: 1500 })
+        ? window.requestIdleCallback(loadNext, { timeout: 400 })
         : setTimeout(loadNext, 120);
     };
-    const startQueue = () => scheduleNext();
+    // Two lanes, so the reactions and eye directions are ready within a moment or two.
+    const startQueue = () => { scheduleNext(); scheduleNext(); };
     if (image.complete && image.naturalWidth) startQueue();
     else image.addEventListener('load', startQueue, { once: true });
+
+    // Only the silhouette is interactive: the square card around it lets pointer events through.
+    const probe = document.createElement('canvas');
+    probe.width = 96;
+    probe.height = 144;
+    const probeContext = probe.getContext('2d', { willReadFrequently: true });
+    let silhouette = false;
+    const mask = new Image();
+    mask.onload = () => {
+      if (!active) return;
+      probeContext.drawImage(mask, 0, 0, probe.width, probe.height);
+      silhouette = true;
+    };
+    mask.src = SILHOUETTE;
+    const overPerson = (event) => {
+      if (!silhouette) return false;
+      const box = button.getBoundingClientRect();
+      const u = (event.clientX - box.left) / box.width;
+      const v = (event.clientY - box.top) / box.height;
+      if (u < 0 || u > 1 || v < 0 || v > 1) return false;
+      // Same mapping as object-fit: cover at center 24% on a 1024x1536 sprite.
+      const x = Math.min(probe.width - 1, Math.floor(u * probe.width));
+      const y = Math.min(probe.height - 1, Math.floor(((v + 0.12) / 1.5) * probe.height));
+      return probeContext.getImageData(x, y, 1, 1).data[3] > 40;
+    };
+    const aim = (event) => {
+      const hit = overPerson(event);
+      button.style.pointerEvents = hit ? 'auto' : 'none';
+    };
+    button.style.pointerEvents = 'none';
 
     const show = (name) => {
       if (!ready.has(name) || name === current) return;
@@ -102,7 +168,15 @@ export default function CursorPortrait() {
       }
       lastChange = performance.now();
     };
+    // Tracked on the window, not the hero: the fixed header and chat button sit on top
+    // of the hero and would otherwise swallow the pointer and freeze his gaze.
     const move = (event) => {
+      const area = hero.getBoundingClientRect();
+      if (event.clientY < area.top || event.clientY > area.bottom) {
+        if (nextPoint) leave();
+        return;
+      }
+      aim(event);
       nextPoint = { x: event.clientX, y: event.clientY };
       lastMove = performance.now();
       if (!frame) frame = requestAnimationFrame(update);
@@ -112,14 +186,18 @@ export default function CursorPortrait() {
       if (performance.now() - lastMove > 3200 && performance.now() >= heldUntil) react('expression-blink', 140);
     }, 5800);
     const click = () => {
+      // The whole card (arch + cut-out) hops and lands with weight.
+      gsap.timeline({ overwrite: 'auto' })
+        .to(hero.querySelectorAll('.exp-hero-portrait-reveal'), { y: -22, scaleY: 1.03, scaleX: 0.99, duration: 0.16, ease: 'power2.out', transformOrigin: '50% 100%' })
+        .to(hero.querySelectorAll('.exp-hero-portrait-reveal'), { y: 0, scaleY: 1, scaleX: 1, duration: 1.1, ease: 'elastic.out(1, 0.3)' });
       react(EXPRESSIONS[expressionIndex % EXPRESSIONS.length], 850);
       expressionIndex += 1;
     };
     const enter = () => react('expression-smile', 650);
     const onPreferenceChange = () => { if (!finePointer.matches || reduceMotion.matches) show('neutral'); };
 
-    hero.addEventListener('pointermove', move, { passive: true });
-    hero.addEventListener('pointerleave', leave);
+    window.addEventListener('pointermove', move, { passive: true });
+    document.documentElement.addEventListener('pointerleave', leave);
     button.addEventListener('pointerenter', enter);
     button.addEventListener('click', click);
     finePointer.addEventListener('change', onPreferenceChange);
@@ -127,8 +205,10 @@ export default function CursorPortrait() {
     return () => {
       active = false;
       portraitRef.current = { show: () => {}, react: () => {} };
-      hero.removeEventListener('pointermove', move);
-      hero.removeEventListener('pointerleave', leave);
+      window.removeEventListener('pointermove', move);
+      document.documentElement.removeEventListener('pointerleave', leave);
+      mask.onload = null;
+      button.style.pointerEvents = '';
       button.removeEventListener('pointerenter', enter);
       button.removeEventListener('click', click);
       finePointer.removeEventListener('change', onPreferenceChange);

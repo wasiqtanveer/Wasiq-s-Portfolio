@@ -64,8 +64,10 @@ function useKnotSlot(hero) {
       let x, y, size, labelX, labelY;
       if (width >= 800) {
         const pad = parseFloat(getComputedStyle(element).paddingLeft) || 0;
-        const ceiling = title.offsetTop + firstLine.offsetTop + firstLine.offsetHeight * 0.82;
-        const wall = title.offsetLeft + firstLetter.offsetLeft - 12;
+        // The title sits in .exp-hero-titlebox (with its outline copy), so offsets go through the box.
+        const titleBox = title.parentElement;
+        const ceiling = titleBox.offsetTop + title.offsetTop + firstLine.offsetTop + firstLine.offsetHeight * 0.82;
+        const wall = titleBox.offsetLeft + title.offsetLeft + firstLetter.offsetLeft - 12;
         const floor = bottom.offsetTop + copy.offsetTop - 18;
         const room = Math.max(180, wall - pad);
         size = clamp(Math.min(room * 1.12, (floor - ceiling) * 1.05), 200, 620);
@@ -103,8 +105,10 @@ function Hero() {
   useKnotSlot(hero);
   return <section ref={hero} className="exp-hero" id="hero" data-tone="paper" aria-labelledby="hero-title">
     <div className="exp-hero-topline exp-label"><span>Wasiq Tanveer<br />Developer & creative problem solver</span><span>Based in Pakistan<br />Building for everywhere ↗</span></div>
-    <h1 id="hero-title" className="exp-hero-title" aria-label="A little different."><span className="exp-title-line" aria-hidden="true">{'A LITTLE'.split('').map((char, index) => <span className="exp-letter" key={index}>{char === ' ' ? '\u00a0' : char}</span>)}</span><span className="exp-title-line exp-title-second" aria-hidden="true">{'DIFFERENT'.split('').map((char, index) => <span className="exp-letter" key={index}>{char}</span>)}<span className="exp-title-dot exp-letter">.</span></span></h1>
-    <div className="exp-hero-portrait"><figure className="exp-hero-portrait-reveal"><CursorPortrait /><figcaption className="exp-label">The human behind the work. <span aria-hidden="true">↗</span></figcaption></figure></div>
+    <div className="exp-hero-titlebox"><h1 id="hero-title" className="exp-hero-title" aria-label="A little different."><span className="exp-title-line" aria-hidden="true">{'A LITTLE'.split('').map((char, index) => <span className="exp-letter" key={index}>{char === ' ' ? '\u00a0' : char}</span>)}</span><span className="exp-title-line exp-title-second" aria-hidden="true">{'DIFFERENT'.split('').map((char, index) => <span className="exp-letter" key={index}>{char}</span>)}<span className="exp-title-dot exp-letter">.</span></span></h1><div className="exp-hero-title-ghost" aria-hidden="true"><span className="exp-ghost-line">{'A LITTLE'.split('').map((char, index) => <span className="exp-ghost-letter" key={index}>{char === ' ' ? ' ' : char}</span>)}</span><span className="exp-ghost-line exp-ghost-second">{'DIFFERENT'.split('').map((char, index) => <span className="exp-ghost-letter" key={index}>{char}</span>)}<span className="exp-ghost-letter">.</span></span></div></div>
+    {/* The green arch sits behind the title; the cut-out of Wasiq sits in front of it, so the letters pass behind his head. Both share the portrait classes so one set of tweens drives them. */}
+    <div className="exp-hero-portrait exp-hero-portrait-back"><figure className="exp-hero-portrait-reveal"><div className="exp-hero-portrait-mat" aria-hidden="true" /><figcaption className="exp-label">The human behind the work. <span aria-hidden="true">↗</span></figcaption></figure></div>
+    <div className="exp-hero-portrait exp-hero-portrait-front"><figure className="exp-hero-portrait-reveal"><CursorPortrait /><figcaption className="exp-label" aria-hidden="true" style={{ visibility: 'hidden' }}>The human behind the work. <span>↗</span></figcaption></figure></div>
     <div className="exp-hero-stage" aria-hidden="true"><Suspense fallback={null}><Sculpture /></Suspense></div>
     <div className="exp-hero-object" aria-hidden="true"><div className="exp-sculpture-fallback"><i /><i /><i /></div></div>
     <span className="exp-orbit-label exp-label" aria-hidden="true">Logic, with a little magic.</span>
@@ -344,7 +348,7 @@ function usePageMotion(root, archive = false) {
         // Entrance: everything in the hero has weight. Letters are set down
         // like blocks of type, the portrait drops onto its hook and swings,
         // and the knot (Sculpture.jsx) lands last, jolting the type it shares a floor with.
-        const intro = gsap.timeline({ paused: true, onComplete: () => gsap.set('.exp-letter, .exp-hero-portrait-reveal', { clearProps: 'all' }) });
+        const intro = gsap.timeline({ paused: true, onComplete: () => gsap.set('.exp-letter, .exp-ghost-letter, .exp-hero-portrait-reveal', { clearProps: 'all' }) });
         // Begin once whatever is covering the page (preloader or page curtain) lifts.
         let introAlive = true;
         const begin = () => {
@@ -356,11 +360,15 @@ function usePageMotion(root, archive = false) {
         if (pageCurtain.preload) { heroRig.introAt = performance.now() + 3.6e6; pageCurtain.preload.then(begin); } else begin();
         cleanups.push(() => { introAlive = false; });
         let at = 0.08;
-        select('.exp-title-line').forEach((line) => {
-          line.querySelectorAll('.exp-letter').forEach((letter) => {
-            intro.fromTo(letter, { yPercent: -80 }, { yPercent: 0, duration: 0.42, ease: 'power2.in' }, at)
-              .fromTo(letter, { opacity: 0 }, { opacity: 1, duration: 0.14, ease: 'none' }, at)
-              .fromTo(letter, { scaleX: 1.1, scaleY: 0.8 }, { scaleX: 1, scaleY: 1, duration: 0.8, ease: 'elastic.out(1, 0.38)', immediateRender: false }, at + 0.42);
+        const ghostLines = select('.exp-ghost-line');
+        select('.exp-title-line').forEach((line, lineIndex) => {
+          const ghostLetters = ghostLines[lineIndex] ? ghostLines[lineIndex].querySelectorAll('.exp-ghost-letter') : [];
+          line.querySelectorAll('.exp-letter').forEach((letter, letterIndex) => {
+            // The outline copy of each letter (over his head) falls with it.
+            const target = ghostLetters[letterIndex] ? [letter, ghostLetters[letterIndex]] : letter;
+            intro.fromTo(target, { yPercent: -80 }, { yPercent: 0, duration: 0.42, ease: 'power2.in' }, at)
+              .fromTo(target, { opacity: 0 }, { opacity: 1, duration: 0.14, ease: 'none' }, at)
+              .fromTo(target, { scaleX: 1.1, scaleY: 0.8 }, { scaleX: 1, scaleY: 1, duration: 0.8, ease: 'elastic.out(1, 0.38)', immediateRender: false }, at + 0.42);
             at += 0.034;
           });
           at += 0.07;
@@ -369,7 +377,7 @@ function usePageMotion(root, archive = false) {
           .fromTo('.exp-hero-portrait-reveal', { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'none' }, 0.3)
           .to('.exp-hero-portrait-reveal', { y: 0, duration: 0.9, ease: 'elastic.out(1, 0.35)' }, 0.8)
           .to('.exp-hero-portrait-reveal', { rotation: 0, duration: 1.8, ease: 'elastic.out(1, 0.22)' }, 0.8);
-        const jolt = (event) => gsap.fromTo('.exp-hero-title', { y: 9 * event.detail }, { y: 0, duration: 0.7, ease: 'elastic.out(1, 0.3)', overwrite: 'auto' });
+        const jolt = (event) => gsap.fromTo('.exp-hero-title, .exp-hero-title-ghost', { y: 9 * event.detail }, { y: 0, duration: 0.7, ease: 'elastic.out(1, 0.3)', overwrite: 'auto' });
         window.addEventListener('exp:knot-impact', jolt);
         cleanups.push(() => { window.removeEventListener('exp:knot-impact', jolt); heroRig.introAt = undefined; });
 
@@ -383,8 +391,8 @@ function usePageMotion(root, archive = false) {
             if (self.isActive && document.documentElement.dataset.scrollTone !== tone) document.documentElement.dataset.scrollTone = tone;
           },
         } });
-        heroJourney.to('.exp-title-line:first-child', { xPercent: -80, rotation: -8, opacity: 0, duration: 0.65, ease: 'none' }, 0)
-          .to('.exp-title-second', { xPercent: 85, rotation: 8, opacity: 0, duration: 0.65, ease: 'none' }, 0.03)
+        heroJourney.to('.exp-title-line:first-child, .exp-ghost-line:first-child', { xPercent: -80, rotation: -8, opacity: 0, duration: 0.65, ease: 'none' }, 0)
+          .to('.exp-title-second, .exp-ghost-second', { xPercent: 85, rotation: 8, opacity: 0, duration: 0.65, ease: 'none' }, 0.03)
           .to(heroRig, { journey: 1, duration: 0.8, ease: 'none' }, 0)
           .to('.exp-hero-object', { scale: desktop ? 2.5 : 1.65, rotation: 65, yPercent: -12, duration: 0.8, ease: 'none' }, 0)
           .to('.exp-hero-portrait', { scale: 1.25, rotation: -8, xPercent: -12, yPercent: -10, duration: 0.6, ease: 'none' }, 0)
