@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Lenis from 'lenis';
+import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -12,7 +13,7 @@ import PageCurtain from './PageCurtain';
 import Preloader from './Preloader';
 import { sound } from './sfx';
 import Portfolio, { WorkIndex } from './Portfolio';
-import { travelTo } from './motion';
+import { travelTo, fontsSettled } from './motion';
 import './experience.css';
 
 const PaperLab = lazy(() => import('../../pages/PaperLab'));
@@ -30,20 +31,27 @@ function Experience() {
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let lenis, frame;
+    let lenis;
+    // Lenis runs on GSAP's ticker, not a second requestAnimationFrame loop, so
+    // the smoothed scroll position and every scrubbed ScrollTrigger are computed
+    // in the same frame, in that order. Two loops drift a frame apart and the
+    // pinned and scrubbed scenes shimmer against the page.
+    const tick = (time) => lenis?.raf(time * 1000);
     const setup = () => {
-      cancelAnimationFrame(frame); lenis?.destroy(); window.__lenis = null;
+      gsap.ticker.remove(tick); lenis?.destroy(); lenis = null; window.__lenis = null;
       if (media.matches) return;
       // A short exponential glide: enough inertia to feel like mass, not so
       // much that scroll-linked scenes trail behind the hand.
       lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
       window.__lenis = lenis;
       lenis.on('scroll', ScrollTrigger.update);
-      const tick = (time) => { lenis.raf(time); frame = requestAnimationFrame(tick); };
-      frame = requestAnimationFrame(tick);
+      gsap.ticker.add(tick);
     };
+    // After a stall GSAP would normally pretend less time passed; with scroll
+    // driving the timelines that reads as a stutter, so time stays real.
+    gsap.ticker.lagSmoothing(0);
     setup(); media.addEventListener('change', setup);
-    return () => { media.removeEventListener('change', setup); cancelAnimationFrame(frame); lenis?.destroy(); window.__lenis = null; };
+    return () => { media.removeEventListener('change', setup); gsap.ticker.remove(tick); lenis?.destroy(); window.__lenis = null; };
   }, []);
 
   // The scrollbar takes the colour of the section crossing the middle of the screen.
@@ -94,7 +102,7 @@ function Experience() {
       };
       // Let route layout effects and the pinned timeline settle before using
       // their final positions. CSS scroll-padding owns the header offset.
-      document.fonts.ready.then(() => {
+      fontsSettled().then(() => {
         if (!alive) return;
         frame = requestAnimationFrame(() => { frame = requestAnimationFrame(jump); });
       });

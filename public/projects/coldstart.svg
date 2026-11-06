@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="coldstart — brand name in, verified work email out">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1421"/>
+      <stop offset="55%" stop-color="#111a2b"/>
+      <stop offset="100%" stop-color="#0a1018"/>
+    </linearGradient>
+    <linearGradient id="wire" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <style>
+      .t  { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      .s  { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .dim{ fill:#7d8da5; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="340" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="3" fill="url(#wire)"/>
+
+  <!-- wordmark -->
+  <text x="64" y="106" class="t" font-size="54" font-weight="700" fill="#e8eefc">coldstart</text>
+  <text x="64" y="146" class="s" font-size="21" fill="#9fb3d1">Brand name in, verified work email out. No paid data vendor in the loop.</text>
+
+  <!-- badges -->
+  <g class="s" font-size="13">
+    <rect x="64" y="170" rx="11" width="128" height="24" fill="#16233a" stroke="#27405f"/>
+    <text x="128" y="186" fill="#8fd8ff" text-anchor="middle">Python 3.11+</text>
+    <rect x="200" y="170" rx="11" width="112" height="24" fill="#16233a" stroke="#27405f"/>
+    <text x="256" y="186" fill="#8fd8ff" text-anchor="middle">MIT licence</text>
+    <rect x="320" y="170" rx="11" width="150" height="24" fill="#16233a" stroke="#27405f"/>
+    <text x="395" y="186" fill="#7ee7b0" text-anchor="middle">zero API keys</text>
+    <rect x="478" y="170" rx="11" width="126" height="24" fill="#16233a" stroke="#27405f"/>
+    <text x="541" y="186" fill="#7ee7b0" text-anchor="middle">runs locally</text>
+  </g>
+
+  <!-- flow -->
+  <g class="t" font-size="14">
+    <!-- input -->
+    <rect x="64" y="238" rx="8" width="176" height="48" fill="#182338" stroke="#2c4059"/>
+    <text x="152" y="261" text-anchor="middle" fill="#e8eefc">"Diva Stuff"</text>
+    <text x="152" y="277" text-anchor="middle" class="s" font-size="11" fill="#7d8da5">a brand name</text>
+
+    <path d="M248 262 h44" stroke="#3b5a80" stroke-width="2"/>
+    <path d="M286 257 l8 5 -8 5 z" fill="#3b5a80"/>
+
+    <rect x="300" y="238" rx="8" width="150" height="48" fill="#182338" stroke="#2c4059"/>
+    <text x="375" y="261" text-anchor="middle" fill="#8fd8ff">the company</text>
+    <text x="375" y="277" text-anchor="middle" class="s" font-size="11" fill="#7d8da5">entity + website</text>
+
+    <path d="M458 262 h44" stroke="#3b5a80" stroke-width="2"/>
+    <path d="M496 257 l8 5 -8 5 z" fill="#3b5a80"/>
+
+    <rect x="510" y="238" rx="8" width="150" height="48" fill="#182338" stroke="#2c4059"/>
+    <text x="585" y="261" text-anchor="middle" fill="#c4b5fd">a real person</text>
+    <text x="585" y="277" text-anchor="middle" class="s" font-size="11" fill="#7d8da5">named, public</text>
+
+    <path d="M668 262 h44" stroke="#3b5a80" stroke-width="2"/>
+    <path d="M706 257 l8 5 -8 5 z" fill="#3b5a80"/>
+
+    <rect x="720" y="238" rx="8" width="164" height="48" fill="#182338" stroke="#2c4059"/>
+    <text x="802" y="261" text-anchor="middle" fill="#fcd34d">the format</text>
+    <text x="802" y="277" text-anchor="middle" class="s" font-size="11" fill="#7d8da5">learned, not guessed</text>
+
+    <path d="M892 262 h44" stroke="#3b5a80" stroke-width="2"/>
+    <path d="M930 257 l8 5 -8 5 z" fill="#3b5a80"/>
+
+    <rect x="944" y="236" rx="8" width="192" height="52" fill="#0f2a1f" stroke="#2f7d55"/>
+    <text x="1040" y="259" text-anchor="middle" fill="#7ee7b0">sarah@acme.com</text>
+    <text x="1040" y="277" text-anchor="middle" class="s" font-size="11" fill="#5fbf8e">SMTP: valid</text>
+  </g>
+
+  <text x="1136" y="322" class="s" font-size="11" fill="#4a5c75" text-anchor="end">amazon INFORM disclosure · Impressum · USPTO · SMTP</text>
+</svg>

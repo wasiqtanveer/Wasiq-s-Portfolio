@@ -6,9 +6,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import emailjs from '@emailjs/browser';
 import CursorPortrait from './CursorPortrait';
 import { CONTACT_EMAIL, CONTACT_MAILTO, SOCIAL_LINKS } from '../../siteConfig';
-import { projects, experiments } from './projects';
+import { projects, experiments, numberWord, pad2 } from './projects';
 import KnotMark from './KnotMark';
-import { createSpring, heroRig, pageCurtain } from './motion';
+import { createSpring, heroRig, pageCurtain, fontsSettled } from './motion';
 import { sound } from './sfx';
 
 const Sculpture = lazy(() => import('./Sculpture'));
@@ -95,7 +95,7 @@ function useKnotSlot(hero) {
     const observer = new ResizeObserver(place);
     observer.observe(element);
     let alive = true;
-    document.fonts.ready.then(() => { if (alive) place(); });
+    fontsSettled().then(() => { if (alive) place(); });
     return () => { alive = false; observer.disconnect(); };
   }, [hero]);
 }
@@ -136,6 +136,34 @@ function Portal() {
   </section>;
 }
 
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+const TOTAL_PROJECTS = projects.length + experiments.length;
+
+// The browser frame on a featured card. A project with a `gallery` cycles its
+// screens (crossfade, or a plain swap under reduced motion via CSS) and only
+// while the frame is on screen; the address bar follows the active screen.
+function BrowserScreens({ project }) {
+  const screens = project.gallery ?? [{ src: project.image, label: new URL(project.url).hostname, alt: `${project.title} website interface` }];
+  const [active, setActive] = useState(0);
+  const frame = useRef(null);
+  useEffect(() => {
+    if (screens.length < 2 || !frame.current) return undefined;
+    let timer = null;
+    const stop = () => { clearInterval(timer); timer = null; };
+    const start = () => { if (!timer) timer = setInterval(() => setActive((current) => (current + 1) % screens.length), 3400); };
+    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) start(); else stop(); }, { threshold: 0.3 });
+    observer.observe(frame.current);
+    return () => { observer.disconnect(); stop(); };
+  }, [screens.length]);
+  return <div ref={frame} className="exp-browser">
+    <div className="exp-browser-bar"><i /><i /><i /><span>{screens[active].label}</span></div>
+    <div className="exp-browser-screens">
+      {screens.map((screen, index) => <img key={screen.src} src={screen.src} alt={index === active ? screen.alt : ''} aria-hidden={index === active ? undefined : 'true'} className={index === active ? 'is-active' : undefined} loading="lazy" width="1366" height="650" />)}
+    </div>
+    {screens.length > 1 && <div className="exp-browser-dots" aria-hidden="true">{screens.map((screen, index) => <i key={screen.src} className={index === active ? 'is-active' : undefined} />)}</div>}
+  </div>;
+}
+
 function Project({ project, index }) {
   const root = useRef(null);
   useGSAP(() => {
@@ -173,7 +201,7 @@ function Project({ project, index }) {
   return <article ref={root} className={`exp-project exp-project-${index + 1}`}>
     <a className="exp-project-visual" href={project.url} target="_blank" rel="noopener noreferrer" style={{ '--project-color': project.color }} aria-label={`Visit ${project.title} (opens in a new tab)`}>
       <div className="exp-project-art-label"><span>{project.name}</span><span>{project.mark}</span></div>
-      <div className="exp-project-tilt"><div className="exp-browser-lift"><i className="exp-browser-shadow" aria-hidden="true" /><div className="exp-browser"><div className="exp-browser-bar"><i /><i /><i /><span>{new URL(project.url).hostname}</span></div><img src={project.image} alt={`${project.title} website interface`} loading="lazy" width="1366" height="650" /></div></div></div>
+      <div className="exp-project-tilt"><div className="exp-browser-lift"><i className="exp-browser-shadow" aria-hidden="true" /><BrowserScreens project={project} /></div></div>
       <span className="exp-visual-meta exp-label">Thoughtfully built. Ready to use.</span><span className="exp-visit-bubble">View<br />project <Arrow /></span>
     </a>
     <div className="exp-project-info"><span className="exp-project-number exp-label">0{index + 1} / {project.year}</span><div><span className="exp-label">{project.category}</span><h3><a href={project.url} target="_blank" rel="noopener noreferrer">{project.title} <Arrow /></a></h3><p>{project.description}</p><div className="exp-project-tags">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div></div></div>
@@ -182,22 +210,22 @@ function Project({ project, index }) {
 
 function SelectedWork() {
   return <section className="exp-work exp-section-pad" id="work" data-tone="ink" aria-labelledby="work-title">
-    <div className="exp-section-kicker exp-label"><span>01 / Work & experiments</span><span>Nine projects. Different possibilities.</span></div>
-    <div className="exp-work-heading"><h2 id="work-title" data-reveal><span className="exp-line-mask"><span>Less ordinary.</span></span><span className="exp-line-mask"><em>More considered.</em></span></h2><span className="exp-work-count">(09)</span></div>
-    <div className="exp-featured-stage"><div className="exp-rail-status exp-label" aria-hidden="true"><span>SELECTED WORK / <b>01</b> — 03</span><span>SCROLL TO BROWSE <span>⟶</span></span></div><div className="exp-projects exp-featured-rail">{projects.map((project, index) => <Project key={project.title} project={project} index={index} />)}</div><div className="exp-rail-progress" aria-hidden="true"><span /></div></div>
-    <a href="#more-work" className="exp-all-work"><span>Three featured. Six more to explore.</span><span>Keep going <span aria-hidden="true">↓</span></span></a>
+    <div className="exp-section-kicker exp-label"><span>01 / Work & experiments</span><span>{capitalize(numberWord(TOTAL_PROJECTS))} projects. Different possibilities.</span></div>
+    <div className="exp-work-heading"><h2 id="work-title" data-reveal><span className="exp-line-mask"><span>Less ordinary.</span></span><span className="exp-line-mask"><em>More considered.</em></span></h2><span className="exp-work-count">({pad2(TOTAL_PROJECTS)})</span></div>
+    <div className="exp-featured-stage"><div className="exp-rail-status exp-label" aria-hidden="true"><span>SELECTED WORK / <b>01</b> — {pad2(projects.length)}</span><span>SCROLL TO BROWSE <span>⟶</span></span></div><div className="exp-projects exp-featured-rail">{projects.map((project, index) => <Project key={project.title} project={project} index={index} />)}</div><div className="exp-rail-progress" aria-hidden="true"><span /></div></div>
+    <a href="#more-work" className="exp-all-work"><span>{capitalize(numberWord(projects.length))} featured. {capitalize(numberWord(experiments.length))} more to explore.</span><span>Keep going <span aria-hidden="true">↓</span></span></a>
   </section>;
 }
 
 function MoreWork() {
-  const words = [['SEARCH', 'ANALYZE', 'COMPARE'], ['CHART', 'TRACK', 'UNDERSTAND'], ['MODERATE', 'AUTOMATE', 'SIMPLIFY'], ['RANK', 'TRACK', 'NOTIFY'], ['TRACK', 'SYNC', 'REPEAT'], ['BORROW', 'RETURN', 'ORGANIZE']];
+  const first = projects.length + 1;
   return <section id="more-work" className="exp-more-work exp-work exp-section-pad" data-tone="ink" aria-labelledby="more-work-title">
-    <div className="exp-section-kicker exp-label"><span>04 — 09 / The rest of the collection</span><span>Small tools. Real usefulness.</span></div>
+    <div className="exp-section-kicker exp-label"><span>{pad2(first)} — {pad2(TOTAL_PROJECTS)} / The rest of the collection</span><span>Small tools. Real usefulness.</span></div>
     <h2 id="more-work-title" data-reveal><span className="exp-line-mask"><span>More of the</span></span><span className="exp-line-mask"><em>good stuff.</em></span></h2>
     <div className="exp-lab-grid">{experiments.map((project, index) => <article className="exp-lab-card" key={project.title}>
-      <a className={`exp-lab-art exp-lab-art-${index}`} href={project.url || SOCIAL_LINKS.find(link => link.name === 'GitHub')?.url || 'https://github.com/wasiqtanveer'} target="_blank" rel="noopener noreferrer" aria-label={project.url ? `Visit ${project.title} (opens in a new tab)` : `Explore ${project.title} on Wasiq’s GitHub (opens in a new tab)`}>
-        <span className="exp-lab-art-top exp-label"><span>0{index + 4} / {project.type}</span><span>↗</span></span>
-        {project.image ? <div className="exp-lab-image"><img src={project.image} alt={`${project.title} interface`} loading="lazy" /></div> : <div className="exp-lab-type" aria-hidden="true">{words[index].map(word => <span key={word}>{word}<i>↗</i></span>)}</div>}
+      <a className={`exp-lab-art exp-lab-art-${index % 6}`} href={project.url || SOCIAL_LINKS.find(link => link.name === 'GitHub')?.url || 'https://github.com/wasiqtanveer'} target="_blank" rel="noopener noreferrer" aria-label={project.url ? `Visit ${project.title} (opens in a new tab)` : `Explore ${project.title} on Wasiq’s GitHub (opens in a new tab)`}>
+        <span className="exp-lab-art-top exp-label"><span>{pad2(index + first)} / {project.type}</span><span>↗</span></span>
+        {project.image ? <div className="exp-lab-image"><img src={project.image} alt={`${project.title} interface`} loading="lazy" /></div> : <div className="exp-lab-type" aria-hidden="true">{(project.words ?? [project.type.toUpperCase()]).map(word => <span key={word}>{word}<i>↗</i></span>)}</div>}
         <span className="exp-lab-art-bottom exp-label">{project.url ? 'Open the project' : 'Explore my GitHub'} <span>↗</span></span>
       </a>
       <div className="exp-lab-copy"><span className="exp-label">{project.type}</span><h3>{project.title}</h3><p>{project.description}</p></div>
@@ -521,7 +549,7 @@ function usePageMotion(root, archive = false) {
     const element = root.current;
     element.addEventListener('toggle', onToggle, true);
     let alive = true;
-    document.fonts.ready.then(() => { if (alive) refresh(); });
+    fontsSettled().then(() => { if (alive) refresh(); });
     const refreshFrame = requestAnimationFrame(refresh);
     return () => { alive = false; cancelAnimationFrame(refreshFrame); cancelAnimationFrame(toggleFrame); element.removeEventListener('toggle', onToggle, true); media.revert(); };
   }, { scope: root, dependencies: [archive] });
@@ -539,6 +567,6 @@ export function WorkIndex() {
   useLayoutEffect(() => { const title = document.title; document.title = 'Selected work & experiments — Wasiq Tanveer'; return () => { document.title = title; }; }, []);
   return <div ref={root} className="exp-page"><main id="main-content" className="exp-archive" data-tone="ink" tabIndex={-1}>
     <section className="exp-work exp-section-pad"><div className="exp-section-kicker exp-label"><Link to="/">← Back to the good stuff</Link><span>Projects & experiments</span></div><h1 data-reveal>The work.<br /><em>And the play.</em></h1><div className="exp-projects">{projects.map((project, index) => <Project key={project.title} project={project} index={index} />)}</div>
-      <div className="exp-experiments"><div className="exp-section-kicker exp-label"><span>The other side of the work</span><span>Tools / Systems / Experiments</span></div><h2 data-reveal>Quietly useful.</h2>{experiments.map((experiment, index) => <details key={experiment.title} className="exp-experiment"><summary><span className="exp-label">0{index + 4}</span><h3>{experiment.title}</h3><span className="exp-label">{experiment.type}</span><i>+</i></summary><div className="exp-experiment-content">{experiment.image ? <img src={experiment.image} alt={`${experiment.title} interface`} loading="lazy" /> : <div className="exp-experiment-placeholder" aria-hidden="true"><span>↗</span><span>{experiment.type}</span></div>}<div><p>{experiment.description}</p><a href={experiment.url || 'https://github.com/wasiqtanveer'} target="_blank" rel="noopener noreferrer" className="exp-text-link">{experiment.url ? 'Visit the project' : 'Explore my GitHub'} <Arrow /></a></div></div></details>)}</div>
+      <div className="exp-experiments"><div className="exp-section-kicker exp-label"><span>The other side of the work</span><span>Tools / Systems / Experiments</span></div><h2 data-reveal>Quietly useful.</h2>{experiments.map((experiment, index) => <details key={experiment.title} className="exp-experiment"><summary><span className="exp-label">{pad2(index + projects.length + 1)}</span><h3>{experiment.title}</h3><span className="exp-label">{experiment.type}</span><i>+</i></summary><div className="exp-experiment-content">{experiment.image ? <img src={experiment.image} alt={`${experiment.title} interface`} loading="lazy" /> : <div className="exp-experiment-placeholder" aria-hidden="true"><span>↗</span><span>{experiment.type}</span></div>}<div><p>{experiment.description}</p><a href={experiment.url || 'https://github.com/wasiqtanveer'} target="_blank" rel="noopener noreferrer" className="exp-text-link">{experiment.url ? 'Visit the project' : 'Explore my GitHub'} <Arrow /></a></div></div></details>)}</div>
     </section></main><ContactFooter /></div>;
 }

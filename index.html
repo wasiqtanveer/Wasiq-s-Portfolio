@@ -51,15 +51,32 @@
   <!-- Google Fonts with font-display: swap -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <!-- Loaded without blocking the first paint. A plain stylesheet link here held
+       back everything, the preloader and the app's scripts included, until
+       Google answered (0.8 to 1.6 s of blank screen). Now it is fetched at high
+       priority and applied when it lands; text swaps in, as display=swap allows. -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" />
+  <link rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" onload="this.onload=null;this.media='all';window.__fontsCss=1;window.dispatchEvent(new Event('exp:fonts-css'))" onerror="window.__fontsCss=1;window.dispatchEvent(new Event('exp:fonts-css'))" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Unbounded:wght@900&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400&display=swap" /></noscript>
   <!-- First-load preloader. It lives here, not in the app, so it is on screen and
        moving from the very first paint, before any JavaScript, three.js, or the
        knot has loaded; everything that moves is a compositor animation. The app
        (Preloader.jsx) only tells it when to finish and lift. -->
   <style>
-    .exp-loader { position: fixed; inset: 0; z-index: 1450; display: flex; flex-direction: column; justify-content: space-between; padding: 0 4vw; background: #0e6b4c; color: #f1f6f2; font-family: 'Inter Tight', Arial, sans-serif; box-shadow: 0 40px 70px -30px #0d1a1480; overflow: hidden; }
+    .exp-loader { position: fixed; inset: 0; z-index: 1450; display: flex; flex-direction: column; justify-content: space-between; padding: 0 4vw; background: #0e6b4c; color: #f1f6f2; font-family: 'Inter Tight', Arial, sans-serif; }
+    /* The curtain's trailing edge: a curved hem below the panel that swells as
+       it is pulled up, so the lift reads as cloth, not a sliding box. */
+    .exp-loader-hem { position: absolute; left: -15%; right: -15%; top: calc(100% - 1px); height: 22vh; background: #0e6b4c; border-radius: 0 0 50% 50%; transform: scaleY(0); transform-origin: 50% 0; pointer-events: none; }
+    .exp-loader-top { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
     .exp-loader-mark { display: flex; align-items: center; height: 105px; font-size: 36px; font-weight: 800; letter-spacing: -0.075em; line-height: 1; }
     .exp-loader-mark > span { align-self: flex-start; margin: 38px 0 0 5px; font-size: 13px; letter-spacing: 0; }
+    .exp-loader-role { padding-top: 44px; font-size: 13px; line-height: 1.35; text-align: right; color: #bfe6cf; }
+    /* The site's trefoil mark, large and turning: the same knot that lands in the hero. */
+    .exp-loader-knot { position: absolute; right: 9vw; top: 50%; width: min(46vh, 34vw); aspect-ratio: 1; margin-top: calc(min(46vh, 34vw) / -2 - 4vh); pointer-events: none; }
+    .exp-loader-knot svg { display: block; width: 100%; height: 100%; overflow: visible; will-change: transform; }
+    .exp-loader-knot path { stroke: #bfe6cf; stroke-width: 0.62; stroke-linejoin: round; fill: none; }
+    .exp-loader-knot .exp-loader-knot-shade { stroke: #0b5a40; stroke-width: 0.62; transform: translate(0.16px, 0.2px); }
+    .exp-loader-foot, .exp-loader-mark, .exp-loader-role { position: relative; z-index: 1; }
     .exp-loader-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 6vh; }
     .exp-loader-count { display: flex; align-items: flex-start; font-size: clamp(120px, 23vw, 360px); font-weight: 600; letter-spacing: -0.08em; line-height: 1; font-variant-numeric: tabular-nums; margin-left: -0.05em; }
     .exp-loader-count em { margin: 0.08em 0 0 0.12em; font-family: Georgia, 'Times New Roman', serif; font-size: 0.26em; font-weight: 400; letter-spacing: 0; color: #bfe6cf; }
@@ -80,6 +97,8 @@
       .exp-loader { padding: 0 6vw; }
       .exp-loader-mark { height: 86px; font-size: 29px; }
       .exp-loader-mark > span { margin-top: 30px; }
+      .exp-loader-role { padding-top: 34px; font-size: 12px; }
+      .exp-loader-knot { right: 50%; width: 62vw; margin: 0 -31vw 0 0; top: 24vh; }
       .exp-loader-foot { flex-direction: column; align-items: flex-start; gap: 8px; padding-bottom: 8vh; }
       .exp-loader-count { font-size: 34vw; }
       .exp-loader-stage { order: -1; padding-bottom: 0; text-align: left; font-size: 19px; }
@@ -88,12 +107,14 @@
 </head>
 <body class="bg-[#0a0a0a] text-[#EAEAE6] font-light overflow-x-hidden">
   <div id="exp-boot" class="exp-loader" aria-hidden="true">
-    <span class="exp-loader-mark">wasiq<span>®</span></span>
+    <div class="exp-loader-top"><span class="exp-loader-mark">wasiq<span>®</span></span><span class="exp-loader-role">Developer &amp;<br />creative problem solver</span></div>
+    <div class="exp-loader-knot"><svg viewBox="-3.7 -3.7 7.4 7.4"><path class="exp-loader-knot-shade" /><path /></svg></div>
     <div class="exp-loader-foot">
       <div class="exp-loader-count"><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><span class="exp-odo-window"><span class="exp-odo-col"></span></span><em>%</em></div>
       <span class="exp-loader-stage"><span>Setting the type…</span></span>
     </div>
     <span class="exp-loader-bar"><i></i></span>
+    <i class="exp-loader-hem"></i>
   </div>
   <script>
     // The counter crawls on its own clock from the first paint (fast, then
@@ -115,13 +136,34 @@
       el.addEventListener('touchmove', block, { passive: false });
       window.addEventListener('keydown', keys);
       const cols = [...el.querySelectorAll('.exp-odo-col')];
-      cols.forEach((col) => { col.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => '<span>' + d + '</span>').join(''); });
+      // The hundreds wheel has a blank where its 0 would be, so the count reads
+      // 7, 42, 97 rather than 007, 042, 097; the "1" rolls in only at 100.
+      cols.forEach((col, index) => { col.innerHTML = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => '<span>' + (index === 0 && d === 0 ? '&nbsp;' : d) + '</span>').join(''); });
       const targets = cols.concat(el.querySelector('.exp-loader-bar i'));
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const CRAWL = 9000, SHARPNESS = 6.7;
+      // The trefoil (the site's mark), drawn here so it is there at first paint.
+      const knotPath = 'M' + Array.from({ length: 144 }, (_, i) => {
+        const t = i / 144 * Math.PI * 2;
+        return (Math.sin(t) + 2 * Math.sin(2 * t)).toFixed(3) + ' ' + (2 * Math.cos(2 * t) - Math.cos(t)).toFixed(3);
+      }).join('L') + 'Z';
+      el.querySelectorAll('.exp-loader-knot path').forEach((path) => path.setAttribute('d', knotPath));
+      // While the count is under 100 the blank hundreds slot is slid off to the
+      // left (a transform, so it costs nothing); at 100 the number slides back.
+      const count = el.querySelector('.exp-loader-count');
+      let slot = 0, landed = false;
+      const shift = (on) => 'translate3d(' + (on ? -slot : 0) + 'px,0,0)';
+      const measure = () => { slot = count.firstElementChild.getBoundingClientRect().width; if (!landed) count.style.transform = shift(true); };
+      // Measured now, and again once the real face is in (fontsReady, below):
+      // its digits are not as wide as the fallback's.
+      measure();
+      // Pacing: brisk at first, then easing toward 95 without ever sitting
+      // still, so a slow load reads as patient rather than stuck. The real
+      // finish (finish()) carries it the rest of the way.
+      const CAP = 95, TAU = 1150;
+      const CRAWL = Math.ceil(-TAU * Math.log(1 - (CAP - 1) / CAP));
       const at = (position) => 'translate3d(0,' + (-position * 100 / 11) + '%,0)';
-      const crawl = (x) => 100 * (1 - Math.pow(1 - x, SHARPNESS));
-      const crawlTime = (value) => 1 - Math.pow(1 - value / 100, 1 / SHARPNESS);
+      const crawl = (x) => Math.min(CAP - 1, CAP * (1 - Math.exp(-x * CRAWL / TAU)));
+      const crawlTime = (value) => (-TAU * Math.log(1 - value / CAP)) / CRAWL;
       const frames = (samples) => {
         const hundreds = [], tens = [], ones = [], bar = [];
         let previous = null;
@@ -159,9 +201,41 @@
           out.cancel();
         };
       };
-      let running = reduce ? [] : play(frames(Array.from({ length: 101 }, (_, value) => [crawlTime(value), value])), CRAWL);
+      let running = reduce ? [] : play(frames(Array.from({ length: CAP }, (_, value) => [crawlTime(value), value])), CRAWL);
+      // Arrival: every piece rises into place, the knot unfurls and keeps turning.
+      // All transform and opacity, so it runs on the compositor and stays smooth
+      // while the main thread is busy starting the app.
+      const knot = el.querySelector('.exp-loader-knot');
+      const knotSvg = knot.querySelector('svg');
+      let spin = null;
+      if (!reduce) {
+        const rise = (node, delay, distance) => node.animate({ opacity: [0, 1], transform: ['translate3d(0,' + distance + ',0)', 'translate3d(0,0,0)'] }, { duration: 900, delay, easing: 'cubic-bezier(0.16,1,0.3,1)', fill: 'backwards' });
+        rise(el.querySelector('.exp-loader-mark'), 0, '40%');
+        rise(el.querySelector('.exp-loader-role'), 80, '40%');
+        rise(el.querySelector('.exp-loader-foot'), 60, '12%');
+        rise(el.querySelector('.exp-loader-stage'), 160, '60%');
+        knot.animate({ opacity: [0, 1], transform: ['scale(0.6) rotate(-90deg)', 'scale(1) rotate(0deg)'] }, { duration: 1300, easing: 'cubic-bezier(0.16,1,0.3,1)', fill: 'backwards' });
+        spin = knotSvg.animate({ transform: ['rotate(0deg)', 'rotate(360deg)'] }, { duration: 9000, iterations: Infinity });
+      }
+      // Fonts are ready when the (non-blocking) font stylesheet has been applied
+      // and the faces the hero is set in have loaded; capped so a slow or
+      // blocked Google Fonts never holds the page hostage.
+      const fontsCss = new Promise((resolve) => {
+        if (window.__fontsCss) resolve();
+        else { addEventListener('exp:fonts-css', resolve, { once: true }); setTimeout(resolve, 3500); }
+      });
+      // Only the faces the hero is set in: `document.fonts.ready` would also wait
+      // for every face used further down the page (seconds, on a slow line).
+      const fontsReady = fontsCss
+        .then(() => Promise.race([
+          Promise.all(['400 1em "Inter Tight"', '500 1em "Inter Tight"', '600 1em "Inter Tight"', '800 1em "Inter Tight"', '400 1em "DM Sans"'].map((face) => document.fonts.load(face))),
+          new Promise((resolve) => setTimeout(resolve, 2500)),
+        ]))
+        .catch(() => {});
+      fontsReady.then(measure);
+      window.__fontsReady = fontsReady;
       window.__boot = {
-        el, started,
+        el, started, fontsReady,
         remove: () => { el.remove(); window.removeEventListener('keydown', keys); root.classList.remove('exp-booting', 'exp-lifting'); },
         // Status text changes slide and fade (compositor animations), and each
         // message stays up for a beat, so quick successive steps never flicker.
@@ -170,19 +244,26 @@
           if (!stageTimer) showStage();
         },
         finish: () => new Promise((resolve) => {
+          landed = true;
           if (reduce) {
             targets.forEach((target, index) => { target.style.transform = index === 3 ? 'scaleX(1)' : at(index === 0 ? 1 : 0); });
+            count.style.transform = shift(false);
             resolve();
             return;
           }
           const elapsed = Number(running[0] && running[0].currentTime) || performance.now() - started;
-          const from = Math.min(99.9, crawl(Math.min(1, elapsed / CRAWL)));
+          const from = Math.floor(crawl(Math.min(1, elapsed / CRAWL)));
+          const FINISH = 560;
           const next = play(frames(Array.from({ length: 61 }, (_, index) => {
             const x = index / 60;
-            return [x, from + (100 - from) * (1 - Math.pow(1 - x, 3))];
-          })), 650);
+            return [x, Math.round(from + (100 - from) * (1 - Math.pow(1 - x, 3)))];
+          })), FINISH);
           running.forEach((animation) => animation.cancel());
           running = next;
+          // The "1" rolls in on the last stretch, and the number slides over to make room.
+          count.animate({ transform: [shift(true), shift(false)] }, { duration: 420, delay: FINISH - 360, easing: 'cubic-bezier(0.16,1,0.3,1)', fill: 'forwards' });
+          // The knot winds up as the count lands.
+          if (spin) spin.updatePlaybackRate(3.2);
           next[0].onfinish = () => resolve();
         }),
         lift: (onUncover) => new Promise((resolve) => {
@@ -193,10 +274,14 @@
             el.animate({ opacity: [1, 0] }, { duration: 300, fill: 'forwards' }).onfinish = done;
             return;
           }
-          // One continuous heave; the contents travel a little faster than the cloth.
+          // One continuous heave. The contents travel faster than the cloth, the
+          // knot spins away, and the curved hem swells behind the panel so the
+          // page is uncovered along a curve rather than a hard line.
           const options = { duration: 1000, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' };
-          el.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-104%,0)'] }, options).onfinish = done;
-          el.querySelectorAll('.exp-loader-mark, .exp-loader-foot').forEach((node) => node.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-16vh,0)'] }, options));
+          el.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,calc(-100% - 23vh),0)'] }, options).onfinish = done;
+          el.querySelector('.exp-loader-hem').animate({ transform: ['scaleY(0)', 'scaleY(1)', 'scaleY(0.35)'], offset: [0, 0.55, 1] }, options);
+          el.querySelectorAll('.exp-loader-top, .exp-loader-foot').forEach((node) => node.animate({ transform: ['translate3d(0,0,0)', 'translate3d(0,-16vh,0)'] }, options));
+          knot.animate({ transform: ['translate3d(0,0,0) scale(1)', 'translate3d(0,-24vh,0) scale(0.7)'], opacity: [1, 0] }, options);
           setTimeout(onUncover, 300);
           setTimeout(() => root.classList.add('exp-lifting'), 650);
         }),

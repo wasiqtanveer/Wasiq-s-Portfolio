@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { travelTo } from './motion';
+import { projects, experiments, pad2 } from './projects';
 
 export default function LiquidNav() {
   const nav = useRef(null);
@@ -85,7 +86,7 @@ export default function LiquidNav() {
       <nav ref={nav} className="exp-nav" aria-label="Main navigation">
         <svg width="0" height="0" aria-hidden="true"><defs><filter id={filterId} x="-50%" y="-100%" width="200%" height="300%"><feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" /><feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -8" /><feComposite in="SourceGraphic" operator="atop" /></filter></defs></svg>
         <div className="exp-liquid" style={{ filter: `url(#${filterId})` }} aria-hidden="true"><i ref={pill} className="exp-liquid-pill" /><i ref={drop} className="exp-liquid-drop" /></div>
-        <Link to="/#work" onClick={(e) => go(e, '#work')}>Work<span>09</span></Link>
+        <Link to="/#work" onClick={(e) => go(e, '#work')}>Work<span>{pad2(projects.length + experiments.length)}</span></Link>
         <Link to="/#about" onClick={(e) => go(e, '#about')}>About</Link>
         <Link to="/#contact" onClick={(e) => go(e, '#contact')}>Contact <span>↗</span></Link>
       </nav>

@@ -127,6 +127,13 @@ export function installPress() {
   };
 }
 
+/**
+ * Resolves once the web fonts are really in. The font stylesheet no longer
+ * blocks the first paint (index.html), so `document.fonts.ready` alone can
+ * resolve before it has even been applied; index.html exposes the real signal.
+ */
+export const fontsSettled = () => (typeof window !== 'undefined' && window.__fontsReady) || document.fonts.ready;
+
 // Shared between the hero's layout/scroll code (main bundle) and the lazily
 // loaded WebGL sculpture. `slot` is the knot's resting place in hero pixels;
 // `journey` is the scroll progress of the hero transition, 0 to 1; `introAt`

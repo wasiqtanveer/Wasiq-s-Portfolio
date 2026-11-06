@@ -55,12 +55,41 @@ function mountSculpture(element) {
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     camera.position.z = 16;
     const viewHeight = 2 * camera.position.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    // The reflections come from a prefiltered environment (PMREM). Building it
+    // uses three big filter shaders, and the first draw with each one waits for
+    // the GPU driver to finish linking it: about 1.5 s of frozen main thread on
+    // a D3D11 laptop. So the programs are linked in parallel first
+    // (KHR_parallel_shader_compile) and the environment is built only once they
+    // are ready, a few frames later, without blocking anything.
     const room = new RoomEnvironment();
     const generator = new THREE.PMREMGenerator(renderer);
-    const environment = generator.fromScene(room, 0.04, 0.1, 100, { size: 128 });
-    scene.environment = environment.texture;
-    room.dispose();
-    generator.dispose();
+    let environment = null;
+    const ENV_SIZE = 128;
+    const warmEnvironment = () => {
+      // Private PMREMGenerator API (three r184). If it ever changes, fall back to
+      // building synchronously: correct, just with the old one-off stall.
+      if (typeof generator._setSize !== 'function' || typeof generator._allocateTargets !== 'function') return [];
+      generator._setSize(ENV_SIZE);
+      const target = generator._allocateTargets();
+      const flat = new THREE.OrthographicCamera();
+      const blank = new THREE.BufferGeometry();
+      const cube = new THREE.CubeCamera(0.1, 100, new THREE.WebGLCubeRenderTarget(ENV_SIZE, { type: THREE.HalfFloatType }));
+      const previous = renderer.getRenderTarget();
+      // Same render-target state as inside fromScene, so the cache keys match.
+      renderer.setRenderTarget(target);
+      [generator._ggxMaterial, generator._blurMaterial].filter(Boolean).forEach((filter) => renderer.compile(new THREE.Mesh(blank, filter), flat));
+      renderer.compile(room, cube.children[0]);
+      renderer.setRenderTarget(previous);
+      cube.renderTarget.dispose(); target.dispose();
+      return [generator._ggxMaterial, generator._blurMaterial, ...new Set(room.children.map((child) => child.material).filter(Boolean))];
+    };
+    const buildEnvironment = () => {
+      environment = generator.fromScene(room, 0.04, 0.1, 100, { size: ENV_SIZE });
+      scene.environment = environment.texture;
+      room.dispose();
+      generator.dispose();
+    };
+    const envPending = renderer.extensions.has('KHR_parallel_shader_compile') ? warmEnvironment() : [];
 
     const geometry = new THREE.TorusKnotGeometry(2.05, 0.65, 220, 36, 2, 3);
     const material = new THREE.MeshStandardMaterial({ color: 0xe0c2a7, metalness: 0.96, roughness: 0.16 });
@@ -377,14 +406,25 @@ function mountSculpture(element) {
     reduce.addEventListener('change', onMotion);
     resize();
     let disposed = false;
-    const pending = renderer.compile(scene, camera);
+    // Linked in parallel; poll until every program reports ready.
+    const programsReady = (materials) => {
+      for (const material of materials) {
+        const program = renderer.properties.get(material).currentProgram;
+        if (!program || program.isReady()) materials.delete(material);
+      }
+      return materials.size === 0;
+    };
+    const envWaiting = new Set(envPending);
+    let pending = null;
     const checkCompiled = () => {
       if (disposed) return;
-      for (const material of pending) {
-        const program = renderer.properties.get(material).currentProgram;
-        if (!program || program.isReady()) pending.delete(material);
+      if (!environment) {
+        if (!programsReady(envWaiting)) { setTimeout(checkCompiled, 16); return; }
+        buildEnvironment();
+        // The knot's own material depends on the environment, so compile it now.
+        pending = renderer.compile(scene, camera);
       }
-      if (pending.size) { setTimeout(checkCompiled, 16); return; }
+      if (!programsReady(pending)) { setTimeout(checkCompiled, 16); return; }
       compiled = true;
       if (reduce.matches) render(); else start();
     };
@@ -406,7 +446,8 @@ function mountSculpture(element) {
       delete hero.dataset.knot;
       geometry.dispose(); pickGeometry.dispose(); pickMaterial.dispose(); pearlGeometry.dispose();
       shadowGeometry.dispose(); shadowMaterial.dispose(); shadowMap.dispose();
-      material.dispose(); environment.dispose(); renderer.dispose();
+      material.dispose(); renderer.dispose();
+      if (environment) environment.dispose(); else { room.dispose(); generator.dispose(); }
       renderer.domElement.remove();
     };
 }

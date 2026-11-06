@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { pageCurtain } from './motion';
+import { pageCurtain, fontsSettled } from './motion';
 
 // The first-load curtain itself lives in index.html (#exp-boot), so it is on
 // screen and moving before any of this code has loaded. This component only
@@ -11,8 +11,12 @@ const STAGES = {
   knot: 'Warming the metal…',
   work: 'Laying out the work…',
 };
-const MINIMUM = 1300; // from first paint: long enough to read as intended, never long enough to annoy
-const HOLD = 260; // a beat on 100 before the lift
+const MINIMUM = 1200; // from first paint: long enough to read as intended, never long enough to annoy
+const HOLD = 140; // a beat on 100 before the lift
+// The WebGL knot is the slowest thing on the page (its shaders link in the
+// background). It is built to land after the headline anyway, so the curtain
+// waits for it only this long; if it is not ready it simply drops in late.
+const KNOT_GRACE = 1800;
 let releaseTimer = 0; // survives React's development double-mount without releasing early
 
 const settle = (promise, ms) => Promise.race([promise, new Promise((resolve) => setTimeout(resolve, ms))]).catch(() => {});
@@ -47,9 +51,10 @@ export default function Preloader() {
     const boot = window.__boot;
     if (!boot || !document.contains(boot.el)) { uncover(); release(); return undefined; }
     const home = window.location.pathname === '/';
+    const fonts = fontsSettled();
     const tasks = home
-      ? [['fonts', document.fonts.ready], ['portrait', imageReady(document.querySelector('.exp-hero-portrait img'))], ['knot', knotReady()]]
-      : [['fonts', document.fonts.ready], ['work', imageReady(document.querySelector('.exp-project-visual img'))]];
+      ? [['fonts', fonts], ['portrait', imageReady(document.querySelector('.exp-hero-portrait img'))], ['knot', settle(knotReady(), KNOT_GRACE)]]
+      : [['fonts', fonts], ['work', imageReady(document.querySelector('.exp-project-visual img'))]];
     const done = new Set();
     const timers = [];
     let alive = true, finished = false;

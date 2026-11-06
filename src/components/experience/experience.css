@@ -172,6 +172,25 @@ html.exp-knot-grabbing .exp-hero { user-select: none; }
 .exp-browser-bar i { width: 4px; height: 4px; background: #c2c3ba; border-radius: 50%; }
 .exp-browser-bar span { margin: 0 auto; padding-right: 23px; font-size: 7px; letter-spacing: 0.04em; }
 .exp-browser img { width: 100%; height: auto; display: block; }
+/* Gallery frames: the first screen sets the height, the rest stack on top of it. */
+.exp-browser-screens { position: relative; }
+.exp-browser-screens img:not(:first-child) { position: absolute; inset: 0; height: 100%; object-fit: cover; object-position: top; }
+.exp-browser-screens img { opacity: 0; transition: opacity 700ms var(--ease-out); }
+.exp-browser-screens img.is-active, .exp-browser-screens img:only-child { opacity: 1; }
+.exp-browser-dots { position: absolute; left: 50%; bottom: 10px; translate: -50% 0; display: flex; gap: 5px; padding: 5px 7px; border-radius: 99px; background: color-mix(in srgb, #111 62%, transparent); pointer-events: none; }
+/* Everything scroll-scrubbed (scale, tilt, rotation) gets its own layer up
+   front. Otherwise the browser repaints it at every new scale as you scroll,
+   and those repaints of big screenshots were the first-scroll stutter. With a
+   layer it is painted once and the GPU only moves it. Measured on cold loads:
+   7-8 dropped frames per full scroll down to 2-4. */
+.exp-lab-card, .exp-lab-art, .exp-lab-image, .exp-project-visual, .exp-project-tilt, .exp-portrait-wrap, .exp-portal-tile { will-change: transform; }
+/* No backdrop-filter on the dots: a blur over a tilting, scrubbed screenshot
+   made the GPU re-raster it, the main source of first-scroll stutter. */
+.exp-browser-dots i { width: 5px; height: 5px; border-radius: 50%; background: #ffffff70; transition: background-color 300ms var(--ease-out), width 300ms var(--ease-out); }
+.exp-browser-dots i.is-active { width: 14px; border-radius: 99px; background: #fff; }
+@media (prefers-reduced-motion: reduce) {
+  .exp-browser-screens img, .exp-browser-dots i { transition: none; }
+}
 .exp-visual-meta { position: absolute; bottom: 5%; left: 5%; font-size: 9px; }
 .exp-visit-bubble { position: absolute; right: 6%; bottom: 9%; width: 104px; height: 104px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 50%; color: var(--exp-on-accent); background: var(--exp-accent); font-size: 14px; line-height: 1.2; opacity: 0; scale: 0.45; translate: 0 22px; transition: opacity 140ms ease, scale 160ms ease-in, translate 160ms ease-in; }
 .exp-visit-bubble svg { width: 19px; height: 19px; position: absolute; top: 20px; right: 19px; }
